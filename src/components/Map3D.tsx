@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { FlyToInterpolator } from "deck.gl";
+import { type MapViewState }  from "deck.gl";
+
 import { Map } from "react-map-gl/mapbox";
 import * as d3 from "d3";
+import { useState, useEffect, useRef } from "react";
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
@@ -21,10 +24,64 @@ interface EarthquakeData {
     year: number;
 }
 
+const INITIAL_VIEW_STATE = {
+    longitude: 122,
+    latitude: 12.5,
+    zoom: 5.5,
+    pitch: 50,
+    bearing: 0
+};
+
+const panelStyle: React.CSSProperties = {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    width: "250px",
+    height: "100%",
+    padding: "1rem",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    boxShadow: "-2px 0 8px rgba(0, 0, 0, 0.3)",
+    boxSizing: "border-box",
+    borderRadius: "5px",
+    fontFamily: "Arial, sans-serif",
+    fontSize: "14px",
+    zIndex: 1000,
+    transition: "transform 0.3s ease-in-out",
+    overflowY: "auto"
+};
+
+const panelHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid #ccc",
+    paddingBottom: "0.5rem",
+};
+
+const closeButtonStyle: React.CSSProperties = {
+    background: "none",
+    border: "none",
+    fontSize: "1.5rem",
+    cursor: "pointer",
+    padding: "0 0.5rem",
+};    
+
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
+    const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
     const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
+    // const [data, setData] = useState<EarthquakeData[]>([]);
+    const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
     const animationFrameRef = useRef<number>(0);
+
+    // Fetch earthquake data
+    // useEffect(() => {
+    //     d3.json<EarthquakeData[]>(DATA_URL).then(fetchedData => {
+    //         if(fetchedData) {
+    //             setData(fetchedData);
+    //         }
+    //     });
+    // }, []);
 
     // Ripple animation effect
     useEffect(() => {
@@ -37,7 +94,7 @@ export default function Map3D() {
         }
         let startTime: number | null = null;
         const animationDuration = 1000;
-        const maxScale = 10000;
+        const maxScale = 50000;
 
         const animateRipple = (currentTime: DOMHighResTimeStamp) => {
             if(!startTime) startTime = currentTime;
@@ -58,6 +115,24 @@ export default function Map3D() {
             }
         };
     }, [hoveredHypocenter]);
+
+    // Click handler
+    const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
+        if(object) {
+            setSelectedHypocenter(object);
+            setViewState(current => ({
+                ...current,
+                longitude: object.longitude,
+                latitude: object.latitude,
+                zoom: 9,
+                pitch: 60,
+                transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
+                transitionDuration: 2000
+            }));
+        } else {
+            setSelectedHypocenter(null);
+        }
+    };
 
     // Scatterplot layer for earthquakes
     const scatterLayer = new ScatterplotLayer<EarthquakeData>({
@@ -99,11 +174,11 @@ export default function Map3D() {
         radiusUnits: "meters",
         getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getRadius: () => rippleAnimation.scale,
-        getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 255)],
+        getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
         radiusMinPixels: 0,
-        radiusMaxPixels: 1000,
+        radiusMaxPixels: 20000,
         pickable: false,
-        billboard: false,
+        billboard: true,
         updateTriggers: {
             getRadius: [rippleAnimation.scale],
             getFillColor: [rippleAnimation.opacity]
@@ -118,7 +193,7 @@ export default function Map3D() {
         getPosition: d => [d.longitude, d.latitude, 0],
         getRadius: d => Math.pow(2, d.magnitude) * 100,
         
-        getFillColor: [255, 255, 255, 255],
+        getFillColor: [255, 255, 255, 128],
         getLineColor: [0, 0, 0, 255],
         getLineWidth: 2,
         lineWidthUnits: "pixels",
@@ -130,36 +205,54 @@ export default function Map3D() {
     });
 
     return (
-        <DeckGL
-            initialViewState={{
-                longitude: 122,
-                latitude: 12.5,
-                zoom: 5.5,
-                pitch: 50,
-                bearing: 0
-            }}
-            controller={true}
-            layers={[scatterLayer, lineLayer, rippleLayer, epicenterCircleLayer]}
+        <>
+        <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+            <DeckGL
+                viewState={viewState}
+                onViewStateChange={e => setViewState(e.viewState as MapViewState)}
+                controller={true}
+                layers={[scatterLayer, lineLayer, rippleLayer, epicenterCircleLayer]}
 
-            onHover={info => {
-                setHoverHypocenter(info.object as EarthquakeData | null);
-            }}
+                onHover={info => {
+                    setHoverHypocenter(info.object as EarthquakeData | null);
+                }}
+                onClick={handleMapClick}
 
-            getTooltip={({object}) => object && (
-                `Mag ${object.magnitude} Earthquake\n`+
-                `Location: ${object.location}\n`+
-                `Depth: ${object.depth_km} km\n`+
-                `Date: ${object.datetime}\n`+
-                `Latitude: ${object.latitude}\n`+
-                `Longitude: ${object.longitude}`
-            )}
-            >
-                <Map
-                    mapboxAccessToken={MAPBOX_TOKEN}
-                    mapStyle="style.json"
-                    projection="mercator"
-                />
-            </DeckGL>
+                getTooltip={({object}) => object && (
+                    `Mag ${object.magnitude} Earthquake\n`+
+                    `Latitude: ${object.latitude}\n`+
+                    `Longitude: ${object.longitude}`
+                )}
+                >
+                    <Map
+                        mapboxAccessToken={MAPBOX_TOKEN}
+                        mapStyle="style.json"
+                        projection="mercator"
+                    />
+                </DeckGL>
+            </div>
+
+            <div style={{
+                ...panelStyle,
+                transform: selectedHypocenter ? "translateX(0)" : "translateX(-260px)"
+            }}>
+                <div style={panelHeaderStyle}>
+                    <h3 style={{ margin: 0 }}>Earthquake Details</h3>
+                    <button
+                        style={closeButtonStyle}
+                        onClick={() => setSelectedHypocenter(null)}
+                    >×</button>
+                </div>
+                <div style={{ marginTop: "1rem" }}>
+                    <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
+                    <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
+                    <p><strong>Date:</strong> {selectedHypocenter?.datetime}</p>
+                    <p><strong>Depth:</strong> {selectedHypocenter?.depth_km}</p>
+                    <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
+                    <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
+                    <p><strong>ID:</strong> {selectedHypocenter?.id}</p>
+                </div>
+            </div>
+        </>
     );
 }
-
