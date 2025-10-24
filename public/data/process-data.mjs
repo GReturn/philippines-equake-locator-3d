@@ -3,7 +3,8 @@ import path from 'path';
 import Papa from 'papaparse';
 import https from 'https';
 
-const CSV_URL = "https://raw.githubusercontent.com/zekejulia/phivolcs-earthquake-data-scraper/refs/heads/main/data/phivolcs_earthquake_all_years.csv";
+const CSV_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-data-scraper/refs/heads/main/data/phivolcs_earthquake_all_years.csv";
+// const CSV_URL = "https://raw.githubusercontent.com/zekejulia/phivolcs-earthquake-data-scraper/refs/heads/main/data/phivolcs_earthquake_all_years.csv";
 const OUTPUT_DIR = path.resolve(process.cwd(), 'public', 'data', 'earthquakes.json');
 
 console.log(`Fetching data from ${CSV_URL}...`);
