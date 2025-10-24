@@ -92,7 +92,7 @@ export default function Map3D() {
             return;
         }
         let startTime: number | null = null;
-        const animationDuration = 1000;
+        const animationDuration = 2000;
         const maxScale = 50000;
 
         const animateRipple = (currentTime: DOMHighResTimeStamp) => {
@@ -191,7 +191,7 @@ export default function Map3D() {
         getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
         
         radiusMinPixels: 0,
-        radiusMaxPixels: 20000,
+        radiusMaxPixels: 50000,
         pickable: false,
         billboard: true,
 
