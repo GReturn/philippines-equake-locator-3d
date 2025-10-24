@@ -37,6 +37,7 @@ export default function Map3D() {
         
         pickable: true,
         autoHighlight: true,
+        billboard: true,
     });
 
     return (
