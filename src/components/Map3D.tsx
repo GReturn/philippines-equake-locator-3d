@@ -26,7 +26,7 @@ export default function Map3D() {
         radiusUnits: "meters",
         
         getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getRadius: 500,
+        getRadius: d => Math.pow(2, d.magnitude) * 100,
         getFillColor: d => {
             const colorString = colorScale(-d.depth_km * 1000);
             const color = d3.rgb(colorString); 
