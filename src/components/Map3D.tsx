@@ -272,7 +272,10 @@ export default function Map3D() {
                     <h3 style={{ margin: 0 }}>Earthquake Details</h3>
                     <button
                         style={closeButtonStyle}
-                        onClick={() => setSelectedHypocenter(null)}
+                        onClick={() => {
+                            setSelectedHypocenter(null);
+                            setHoverHypocenter(null);
+                        }}
                     >×</button>
                 </div>
                 <div style={{ marginTop: "1rem" }}>
