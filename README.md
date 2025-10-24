@@ -4,6 +4,8 @@ An interactive 3D web application for visualizing historical earthquake data wit
 
 **Live Demo Link:** [**https://greturn.github.io/philippines-equake-locator-3d/**](https://greturn.github.io/philippines-equake-locator-3d/)
 
+![Screenshot of PH Historical Earthquake Locator 3D](demo-screenshot.png)
+
 ---
 
 ## Details
