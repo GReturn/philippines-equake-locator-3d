@@ -121,7 +121,7 @@ export default function Map3D() {
             const depthMeters = object.depth_km * 1000;
             
             // Convert the meter offset to a change in latitude
-            // ~111,139 meters per degree of latitude
+            // ~111,321 meters per degree of latitude
             // https://www.thoughtco.com/degree-of-latitude-and-longitude-distance-4070616
             const meterOffset = depthMeters * Math.tan(pitchRadians);
             const metersPerDegreeLatitude = 111321;
