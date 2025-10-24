@@ -86,9 +86,7 @@ export default function Map3D() {
     // Ripple animation effect
     useEffect(() => {
         if(!hoveredHypocenter) {
-            if(animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
+            if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
             setRippleAnimation({scale: 0, opacity: 0});
             return;
         }
@@ -100,19 +98,16 @@ export default function Map3D() {
             if(!startTime) startTime = currentTime;
             const elapsed = currentTime - startTime;
             const progress = (elapsed % animationDuration) / animationDuration;
-
-            const scale = progress * maxScale;
-            const opacity = Math.max(0, 1 - progress);
-            setRippleAnimation({scale, opacity});
+            setRippleAnimation({
+                scale: progress * maxScale,
+                opacity: Math.max(0, 1 - progress)
+            });
             animationFrameRef.current = requestAnimationFrame(animateRipple);
         };
 
         animationFrameRef.current = requestAnimationFrame(animateRipple);
-
         return () => {
-            if(animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
+            if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
     }, [hoveredHypocenter]);
 
