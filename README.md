@@ -1,6 +1,6 @@
 # Philippine Historical Earthquake Locator 3D
 
-An interactive 3D web application for visualizing historical earthquake data within the Philippine region. This tool allows users to explore the location, magnitude, and depth of past seismic events on a dynamic globe.
+An interactive 3D web application for visualizing historical earthquake data within the Philippine region. This tool allows users to explore the location, magnitude, and depth of past seismic events from 2018 to October 2025.
 
 **Live Demo Link:** [**https://greturn.github.io/philippines-equake-locator-3d/**](https://greturn.github.io/philippines-equake-locator-3d/)
 
