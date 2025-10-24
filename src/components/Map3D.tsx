@@ -62,7 +62,8 @@ export default function Map3D() {
             >
                 <Map
                     mapboxAccessToken={MAPBOX_TOKEN}
-                    mapStyle="mapbox://styles/mapbox/dark-v11"
+                    mapStyle="style.json"
+                    projection="mercator"
                 />
             </DeckGL>
     );
