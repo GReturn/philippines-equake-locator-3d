@@ -116,6 +116,7 @@ export default function Map3D() {
     const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
         if(object) {
             setSelectedHypocenter(object);
+            setHoverHypocenter(object);
 
             const pitch = 60;
             const pitchRadians = (pitch * Math.PI) / 180;
@@ -142,6 +143,7 @@ export default function Map3D() {
             }));
         } else {
             setSelectedHypocenter(null);
+            setHoverHypocenter(null);
         }
     };
 
@@ -243,6 +245,7 @@ export default function Map3D() {
                             new FullscreenWidget({placement:"top-right"})
                         ]}
                     onHover={info => {
+                        if(selectedHypocenter) return;
                         setHoverHypocenter(info.object as EarthquakeData | null);
                     }}
                     onClick={handleMapClick}
