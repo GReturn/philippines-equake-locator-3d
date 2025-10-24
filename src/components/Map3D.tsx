@@ -1,16 +1,18 @@
 import DeckGL from "@deck.gl/react";
 import { ScatterplotLayer } from "@deck.gl/layers";
 import { Map } from "react-map-gl/mapbox";
+import * as d3 from "d3";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const DATA_URL = "/data/earthquakes.json";
+const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 
 interface EarthquakeData {
     id: string;
     datetime: string;
     latitude: number;
     longitude: number;
-    depth: number;
+    depth_km: number;
     magnitude: number;
     location: string;
     month: string;
@@ -18,15 +20,21 @@ interface EarthquakeData {
 }
 
 export default function Map3D() {
-    // TODO change the visuals
     const layers = new ScatterplotLayer<EarthquakeData>({
         id: "earthquakes",
         data: DATA_URL,
-        getPosition: d => [d.longitude, d.latitude, -d.depth * 1000],
-        getRadius: d => Math.pow(1.5, d.magnitude) * 100,
-        getFillColor: d => [255, 255 - d.depth * 2, 0, 180],
+        radiusUnits: "meters",
+        
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getRadius: 500,
+        getFillColor: d => {
+            const colorString = colorScale(-d.depth_km * 1000);
+            const color = d3.rgb(colorString); 
+            return [color.r, color.g, color.b];
+        },
+
         radiusMinPixels: 2,
-        radiusMaxPixels: 20,
+        
         pickable: true,
         autoHighlight: true,
     });

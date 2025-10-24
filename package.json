@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@types/papaparse": "^5.3.16",
+    "d3": "^7.9.0",
     "deck.gl": "^9.2.2",
     "mapbox-gl": "^3.16.0",
     "papaparse": "^5.5.3",
