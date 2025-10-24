@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
-import { FlyToInterpolator } from "deck.gl";
-import { type MapViewState }  from "deck.gl";
+import { FlyToInterpolator, type MapViewState } from "deck.gl";
 import { Map } from "react-map-gl/mapbox";
+import { CompassWidget, FullscreenWidget, ZoomWidget } from "@deck.gl/widgets"
 import * as d3 from "d3";
+
+import '@deck.gl/widgets/stylesheet.css';
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
@@ -221,36 +223,41 @@ export default function Map3D() {
     });
 
     const layers = [
-    scatterLayer,
-    lineLayer,
-    rippleLayer, 
-    epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
-];
+        scatterLayer,
+        lineLayer,
+        rippleLayer, 
+        epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
+    ];
 
     return (
         <>
-        <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-            <DeckGL
-                viewState={viewState}
-                onViewStateChange={e => setViewState(e.viewState as MapViewState)}
-                controller={true}
-                layers={layers}
-
-                onHover={info => {
-                    setHoverHypocenter(info.object as EarthquakeData | null);
-                }}
-                onClick={handleMapClick}
-
-                getTooltip={({object}) => object && (
-                    `Mag ${object.magnitude} Earthquake\n`+
-                    `- Depth: ${object.depth_km} km`
-                )}
+            <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+                <DeckGL
+                    viewState={viewState}
+                    onViewStateChange={e => setViewState(e.viewState as MapViewState)}
+                    controller
+                    layers={layers}
+                    widgets={[
+                            new ZoomWidget({placement:"top-right"}),
+                            new CompassWidget({placement:"top-right"}),
+                            new FullscreenWidget({placement:"top-right"})
+                        ]}
+                    onHover={info => {
+                        setHoverHypocenter(info.object as EarthquakeData | null);
+                    }}
+                    onClick={handleMapClick}
+                    getTooltip={({object}) => object && (
+                        `Mag ${object.magnitude} Earthquake\n`+
+                        `- Depth: ${object.depth_km} km`
+                    )}
                 >
                     <Map
                         mapboxAccessToken={MAPBOX_TOKEN}
                         mapStyle="style.json"
                         projection="mercator"
-                    />
+                        attributionControl={false}
+                    >
+                </Map>
                 </DeckGL>
             </div>
 
