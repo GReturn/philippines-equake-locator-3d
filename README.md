@@ -1,4 +1,4 @@
-# 🇵🇭 PH Historical Earthquake Locator 3D
+# Philippine Historical Earthquake Locator 3D
 
 An interactive 3D web application for visualizing historical earthquake data within the Philippine region. This tool allows users to explore the location, magnitude, and depth of past seismic events on a dynamic globe.
 
