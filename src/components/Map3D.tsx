@@ -1,11 +1,10 @@
+import { useState, useEffect, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { FlyToInterpolator } from "deck.gl";
 import { type MapViewState }  from "deck.gl";
-
 import { Map } from "react-map-gl/mapbox";
 import * as d3 from "d3";
-import { useState, useEffect, useRef } from "react";
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
@@ -133,7 +132,7 @@ export default function Map3D() {
                 ...current,
                 longitude: object.longitude,
                 latitude: targetLatitude,
-                zoom: 10,
+                zoom: 8,
                 pitch: 60,
                 bearing: 0,
                 transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
@@ -257,7 +256,7 @@ export default function Map3D() {
 
             <div style={{
                 ...panelStyle,
-                transform: selectedHypocenter ? "translateX(0)" : "translateX(-260px)"
+                transform: selectedHypocenter ? "translateX(0)" : "translateX(-450px)"
             }}>
                 <div style={panelHeaderStyle}>
                     <h3 style={{ margin: 0 }}>Earthquake Details</h3>
