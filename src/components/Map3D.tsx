@@ -270,7 +270,7 @@ export default function Map3D() {
                     <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
                     <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
                     <p><strong>Date:</strong> {selectedHypocenter?.datetime}</p>
-                    <p><strong>Depth:</strong> {selectedHypocenter?.depth_km}km</p>
+                    <p><strong>Depth:</strong> {selectedHypocenter?.depth_km} km</p>
                     <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
                     <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
                     <p><strong>ID:</strong> {selectedHypocenter?.id}</p>
