@@ -2,12 +2,9 @@ import * as d3 from "d3";
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useEffect, useRef } from "react";
-import DeckGL from "@deck.gl/react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { FlyToInterpolator, type MapViewState } from "deck.gl";
-import { Map } from "react-map-gl/mapbox";
 import { CompassWidget, FullscreenWidget, ZoomWidget } from "@deck.gl/widgets"
-import * as d3 from "d3";
 
 import '@deck.gl/widgets/stylesheet.css';
 
