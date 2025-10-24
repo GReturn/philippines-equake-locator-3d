@@ -12,8 +12,7 @@ An interactive 3D web application for visualizing historical earthquake data wit
 
 Made with TS, React, Vite.
 
-The historical earthquake data used in this project is sourced from the official public records of the:
-* **[Philippine Institute of Volcanology and Seismology (PHIVOLCS)](https://www.phivolcs.dost.gov.ph/)**
+The historical earthquake data used in this project is sourced from the official public records of the **[Philippine Institute of Volcanology and Seismology (PHIVOLCS)](https://www.phivolcs.dost.gov.ph/)**
 
 **Disclaimer:** This tool is intended for educational and informational purposes only. It is **not** to be used for real-time monitoring or disaster response. Please always refer to official government agencies for alerts.
 
