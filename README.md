@@ -10,7 +10,7 @@ An interactive 3D web application for visualizing historical earthquake data wit
 
 ## Details
 
-Made with TS, React, Vite.
+Made with TS, React, Vite. Map is provided by Mapbox GL. High-perf rendering is done by `deck.gl`.
 
 The historical earthquake data used in this project is sourced from the official public records of the **[Philippine Institute of Volcanology and Seismology (PHIVOLCS)](https://www.phivolcs.dost.gov.ph/)**
 
