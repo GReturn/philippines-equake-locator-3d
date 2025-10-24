@@ -33,7 +33,6 @@ If you wish to run this project locally:
     ```
 
 3.  **Install dependencies:**
-    *(Use the command appropriate for your project)*
     ```bash
     npm install
     ```
