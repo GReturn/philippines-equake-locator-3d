@@ -27,15 +27,15 @@ https.get(CSV_URL, (response) => {
     // do everything after the response ends
     response.on('end', () => {
         try {
-        console.log("Parsing CSV...");
+            console.log("Parsing CSV...");
 
-        const parsedData = Papa.parse(csvData, {
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true
-        });
+            const parsedData = Papa.parse(csvData, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true
+            });
 
-        console.log(`Parsed ${parsedData.data.length} rows.`);
+            console.log(`Parsed ${parsedData.data.length} rows.`);
 
         const processedData = parsedData.data
             .map((row, index) => ({
@@ -45,7 +45,7 @@ https.get(CSV_URL, (response) => {
                 longitude: row.Longitude,
                 depth_km: row.Depth,
                 magnitude: row.Magnitude,
-                location: row.Location,
+                location: row.Location ? row.Location.replace(/Â/g, '') : '', // theres a weird character Â preceding the degree character symbol, this removes it
                 month: row.Month,
                 year: row.Year
             }))
