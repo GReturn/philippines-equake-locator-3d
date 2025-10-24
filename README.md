@@ -23,7 +23,7 @@ If you wish to run this project locally:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/GReturn/philippines-equake-locator-3d.git](https://github.com/GReturn/philippines-equake-locator-3d.git)
+    git clone https://github.com/GReturn/philippines-equake-locator-3d.git
     ```
 
 2.  **Navigate to the project directory:**
