@@ -100,7 +100,7 @@ export default function Map3D() {
             const progress = (elapsed % animationDuration) / animationDuration;
             setRippleAnimation({
                 scale: progress * maxScale,
-                opacity: Math.max(0, 1 - progress)
+                opacity: Math.max(0, 0.7 - progress * 0.7)
             });
             animationFrameRef.current = requestAnimationFrame(animateRipple);
         };
@@ -148,17 +148,19 @@ export default function Map3D() {
         
         pickable: true,
         autoHighlight: true,
-        billboard: false,
+        billboard: true,
     });
 
     // Line layer for depth lines
     const lineLayer = new LineLayer<EarthquakeData>({
         id: "depth-lines",
         data: hoveredHypocenter ? [hoveredHypocenter] : [],
+        
         getSourcePosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getTargetPosition: d => [d.longitude, d.latitude, 0],
         getColor: [255, 255, 255],
         getWidth: 2,
+        
         pickable: false,
     });
 
@@ -167,13 +169,16 @@ export default function Map3D() {
         id: "epicenter-ripple",
         data: hoveredHypocenter ? [hoveredHypocenter] : [],
         radiusUnits: "meters",
+        
         getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getRadius: () => rippleAnimation.scale,
         getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
+        
         radiusMinPixels: 0,
         radiusMaxPixels: 20000,
         pickable: false,
         billboard: true,
+
         updateTriggers: {
             getRadius: [rippleAnimation.scale],
             getFillColor: [rippleAnimation.opacity]
@@ -185,19 +190,28 @@ export default function Map3D() {
         id: "epicenter-circle",
         data: hoveredHypocenter ? [hoveredHypocenter] : [],
         radiusUnits: "meters",
-        getPosition: d => [d.longitude, d.latitude, 0],
-        getRadius: d => Math.pow(2, d.magnitude) * 100,
-        
-        getFillColor: [255, 255, 255, 128],
-        getLineColor: [0, 0, 0, 255],
-        getLineWidth: 2,
         lineWidthUnits: "pixels",
+
+        getPosition: d => [d.longitude, d.latitude, 1],
+        // getRadius: d => Math.pow(2, d.magnitude) * 100,
+        getRadius: 500,
+        getFillColor: [255, 255, 255, 128],
+        getLineColor: [0, 0, 0, 255],        
+        getLineWidth: 2,
         
         radiusMinPixels: 4,
-
+        
         pickable: false,
-        billboard: false,
+        billboard: true,
+
     });
+
+    const layers = [
+    scatterLayer,
+    lineLayer,
+    rippleLayer, 
+    epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue in some way :P
+];
 
     return (
         <>
@@ -206,7 +220,7 @@ export default function Map3D() {
                 viewState={viewState}
                 onViewStateChange={e => setViewState(e.viewState as MapViewState)}
                 controller={true}
-                layers={[scatterLayer, lineLayer, rippleLayer, epicenterCircleLayer]}
+                layers={layers}
 
                 onHover={info => {
                     setHoverHypocenter(info.object as EarthquakeData | null);
@@ -215,8 +229,7 @@ export default function Map3D() {
 
                 getTooltip={({object}) => object && (
                     `Mag ${object.magnitude} Earthquake\n`+
-                    `Latitude: ${object.latitude}\n`+
-                    `Longitude: ${object.longitude}`
+                    `- Depth: ${object.depth_km} km`
                 )}
                 >
                     <Map
