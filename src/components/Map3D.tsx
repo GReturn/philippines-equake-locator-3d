@@ -225,7 +225,7 @@ export default function Map3D() {
     scatterLayer,
     lineLayer,
     rippleLayer, 
-    epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue in some way :P
+    epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
 ];
 
     return (
