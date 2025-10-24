@@ -1,3 +1,6 @@
+import * as d3 from "d3";
+import DeckGL from "@deck.gl/react";
+import { Map } from "react-map-gl/mapbox";
 import { useState, useEffect, useRef } from "react";
 import DeckGL from "@deck.gl/react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
