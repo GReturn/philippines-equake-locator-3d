@@ -74,6 +74,7 @@ export default function Map3D() {
     // const [data, setData] = useState<EarthquakeData[]>([]);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
     const animationFrameRef = useRef<number>(0);
+    const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
     // Fetch earthquake data
     // useEffect(() => {
@@ -231,61 +232,75 @@ export default function Map3D() {
         epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
     ];
 
+    const widgets = [
+        new ZoomWidget({placement:"top-right"}),
+        new CompassWidget({placement:"top-right"}),
+        new FullscreenWidget({
+            placement:"top-right",
+            container: fullscreenContainerRef.current || undefined
+        })
+    ];
+
     return (
         <>
-            <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-                <DeckGL
-                    viewState={viewState}
-                    onViewStateChange={e => setViewState(e.viewState as MapViewState)}
-                    controller
-                    layers={layers}
-                    widgets={[
-                            new ZoomWidget({placement:"top-right"}),
-                            new CompassWidget({placement:"top-right"}),
-                            new FullscreenWidget({placement:"top-right"})
-                        ]}
-                    onHover={info => {
-                        if(selectedHypocenter) return;
-                        setHoverHypocenter(info.object as EarthquakeData | null);
-                    }}
-                    onClick={handleMapClick}
-                    getTooltip={({object}) => object && (
-                        `Mag ${object.magnitude} Earthquake\n`+
-                        `- Depth: ${object.depth_km} km`
-                    )}
-                >
-                    <Map
-                        mapboxAccessToken={MAPBOX_TOKEN}
-                        mapStyle="style.json"
-                        projection="mercator"
-                        attributionControl={false}
-                    >
-                </Map>
-                </DeckGL>
-            </div>
-
-            <div style={{
-                ...panelStyle,
-                transform: selectedHypocenter ? "translateX(0)" : "translateX(-450px)"
-            }}>
-                <div style={panelHeaderStyle}>
-                    <h3 style={{ margin: 0 }}>Earthquake Details</h3>
-                    <button
-                        style={closeButtonStyle}
-                        onClick={() => {
-                            setSelectedHypocenter(null);
-                            setHoverHypocenter(null);
+            <div 
+                ref={fullscreenContainerRef} 
+                style={{ 
+                    position: 'relative', 
+                    width: '100vw', 
+                    height: '100vh',
+                }}
+            >
+                <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+                    <DeckGL
+                        viewState={viewState}
+                        onViewStateChange={e => setViewState(e.viewState as MapViewState)}
+                        controller
+                        layers={layers}
+                        widgets={widgets}
+                        onHover={info => {
+                            if(selectedHypocenter) return;
+                            setHoverHypocenter(info.object as EarthquakeData | null);
                         }}
-                    >×</button>
+                        onClick={handleMapClick}
+                        getTooltip={({object}) => object && (
+                            `Mag ${object.magnitude} Earthquake\n`+
+                            `- Depth: ${object.depth_km} km`
+                        )}
+                    >
+                        <Map
+                            mapboxAccessToken={MAPBOX_TOKEN}
+                            mapStyle="style.json"
+                            projection="mercator"
+                            attributionControl={false}
+                        >
+                    </Map>
+                    </DeckGL>
                 </div>
-                <div style={{ marginTop: "1rem" }}>
-                    <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
-                    <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
-                    <p><strong>Date:</strong> {selectedHypocenter?.datetime}</p>
-                    <p><strong>Depth:</strong> {selectedHypocenter?.depth_km} km</p>
-                    <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
-                    <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
-                    <p><strong>ID:</strong> {selectedHypocenter?.id}</p>
+
+                <div style={{
+                    ...panelStyle,
+                    transform: selectedHypocenter ? "translateX(0)" : "translateX(-450px)"
+                }}>
+                    <div style={panelHeaderStyle}>
+                        <h3 style={{ margin: 0 }}>Earthquake Details</h3>
+                        <button
+                            style={closeButtonStyle}
+                            onClick={() => {
+                                setSelectedHypocenter(null);
+                                setHoverHypocenter(null);
+                            }}
+                        >×</button>
+                    </div>
+                    <div style={{ marginTop: "1rem" }}>
+                        <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
+                        <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
+                        <p><strong>Date:</strong> {selectedHypocenter?.datetime}</p>
+                        <p><strong>Depth:</strong> {selectedHypocenter?.depth_km} km</p>
+                        <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
+                        <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
+                        <p><strong>ID:</strong> {selectedHypocenter?.id}</p>
+                    </div>
                 </div>
             </div>
         </>
