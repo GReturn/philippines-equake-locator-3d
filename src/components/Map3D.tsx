@@ -5,7 +5,7 @@ import * as d3 from "d3";
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
-const DATA_URL = "/data/earthquakes.json";
+const DATA_URL = "data/earthquakes.json";
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 
 interface EarthquakeData {

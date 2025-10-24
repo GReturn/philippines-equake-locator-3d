@@ -10,5 +10,5 @@ export default defineConfig({
       },
     }),
   ],
-  base: "/philippines-equake-locator-3d",
+  base: "/philippines-equake-locator-3d/",
 })
