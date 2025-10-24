@@ -115,12 +115,27 @@ export default function Map3D() {
     const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
         if(object) {
             setSelectedHypocenter(object);
+
+            const pitch = 60;
+            const pitchRadians = (pitch * Math.PI) / 180;
+            const depthMeters = object.depth_km * 1000;
+            
+            // Convert the meter offset to a change in latitude
+            // ~111,139 meters per degree of latitude
+            // https://www.thoughtco.com/degree-of-latitude-and-longitude-distance-4070616
+            const meterOffset = depthMeters * Math.tan(pitchRadians);
+            const metersPerDegreeLatitude = 111321;
+            const deltaLatitude = meterOffset / metersPerDegreeLatitude;
+            
+            const targetLatitude = object.latitude - deltaLatitude;
+
             setViewState(current => ({
                 ...current,
                 longitude: object.longitude,
-                latitude: object.latitude,
+                latitude: targetLatitude,
                 zoom: 9,
                 pitch: 60,
+                bearing: 0,
                 transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
                 transitionDuration: 2000
             }));
