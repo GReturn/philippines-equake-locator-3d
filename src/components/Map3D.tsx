@@ -54,7 +54,10 @@ export default function Map3D() {
             getTooltip={({object}) => object && (
                 `Mag ${object.magnitude} Earthquake\n`+
                 `Location: ${object.location}\n`+
-                `Depth: ${object.depth} km\n`
+                `Depth: ${object.depth_km} km\n`+
+                `Date: ${object.datetime}\n`+
+                `Latitude: ${object.latitude}\n`+
+                `Longitude: ${object.longitude}`
             )}
             >
                 <Map
