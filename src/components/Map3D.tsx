@@ -110,7 +110,7 @@ const closeButtonStyle: React.CSSProperties = {
     cursor: "pointer",
     padding: "0 0.5rem",
     color: "#ffffff"
-};    
+};
 
 const listItemStyle: React.CSSProperties = {
     padding: '8px 4px',
@@ -220,27 +220,27 @@ export default function Map3D() {
     }, [hoveredHypocenter]);
 
     const flyToEarthquake = (equake: EarthquakeData) => {
-            const pitch = 60;
-            const pitchRadians = (pitch * Math.PI) / 180;
+        const pitch = 60;
+        const pitchRadians = (pitch * Math.PI) / 180;
         const depthMeters = equake.depth_km * 1000;
-            
-            // Convert the meter offset to a change in latitude
-            // ~111,321 meters per degree of latitude
-            // https://www.thoughtco.com/degree-of-latitude-and-longitude-distance-4070616
-            const meterOffset = depthMeters * Math.tan(pitchRadians);
-            const metersPerDegreeLatitude = 111321;
-            const deltaLatitude = meterOffset / metersPerDegreeLatitude;
+
+        // Convert the meter offset to a change in latitude
+        // ~111,321 meters per degree of latitude
+        // https://www.thoughtco.com/degree-of-latitude-and-longitude-distance-4070616
+        const meterOffset = depthMeters * Math.tan(pitchRadians);
+        const metersPerDegreeLatitude = 111321;
+        const deltaLatitude = meterOffset / metersPerDegreeLatitude;
         const targetLatitude = equake.latitude - deltaLatitude;
 
-            setViewState(current => ({
-                ...current,
+        setViewState(current => ({
+            ...current,
             longitude: equake.longitude,
-                latitude: targetLatitude,
-                zoom: 8,
-                pitch: 60,
-                bearing: 0,
-                transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
-                transitionDuration: 2000
+            latitude: targetLatitude,
+            zoom: 8,
+            pitch: 60,
+            bearing: 0,
+            transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
+            transitionDuration: 2000
         }))
     };
 
@@ -382,7 +382,8 @@ export default function Map3D() {
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
     });
 
-    const customButtons: ButtonDefinition[] = [
+    const customButtons: ButtonDefinition[] = 
+    [
         {
             id: 'filter-widget',
             title: 'Add Filters',
@@ -476,7 +477,7 @@ export default function Map3D() {
                                 setSelectedHypocenter(null);
                                 setHoverHypocenter(null);
                             }}
-                        >×</button>
+                        >&times;</button>
                     </div>
                     <div style={{ marginTop: "1rem" }}>
                         <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
