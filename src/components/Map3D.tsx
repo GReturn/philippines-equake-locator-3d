@@ -9,6 +9,7 @@ import { CompassWidget, FullscreenWidget, ZoomWidget } from "@deck.gl/widgets"
 import '@deck.gl/widgets/stylesheet.css';
 
 import { CustomIconWidget } from "./widgets/CustomIconWidget";
+import { IconButtonGroupWidget, type ButtonDefinition } from "./widgets/IconButtonGroupWidget";
 
 import "./widgets/widgets.css"
 
@@ -245,23 +246,55 @@ export default function Map3D() {
         console.log('Button widget was clicked!', event);
         alert('NOWE FILERTERS!');
     };
+    
+    const handleAboutClick = (event: MouseEvent) => {
+        console.log('Button widget was clicked!', event);
+        alert('Check historical earthquake from 2018 to October 2025');
+    };
 
-    const historyWidget = new CustomIconWidget({
-        id: 'history-widget',
-        placement: 'top-right',
-        title: 'Show History',
-        onClick: handleHistoryClick,
-        iconName: 'history', // for the Google svg icon name: https://fonts.google.com/icons  
+    const handleSourceCodeClick = () => {
+        open("https://github.com/GReturn/philippines-equake-locator-3d");
+    };
+
+    const sourceCodeWidget = new CustomIconWidget({
+        id: 'source-code-widget',
+        placement: 'bottom-right',
+        title: 'Source Code',
+        onClick: handleSourceCodeClick,
+        iconName: 'code', // for the Google svg icon name: https://fonts.google.com/icons  
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
     });
 
-    const filterWidget = new CustomIconWidget({
-        id: 'filter-widget',
-        placement: 'top-right',
-        title: 'Add Filters',
-        onClick: handleFilterClick,
-        iconName: 'filter_list', // for the Google svg icon name: https://fonts.google.com/icons  
+    const aboutWidget = new CustomIconWidget({
+        id: 'about-widget',
+        placement: 'bottom-right',
+        title: 'About',
+        onClick: handleAboutClick,
+        iconName: 'info',
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
+    });
+
+    const customButtons: ButtonDefinition[] = [
+        {
+            id: 'filter-widget',
+            title: 'Add Filters',
+            iconName: 'filter_list',
+            onClick: handleFilterClick
+        },
+        {
+            id: 'history-widget',
+            title: 'Recent Earthquakes',
+            iconName: 'list',
+            onClick: handleHistoryClick
+        }
+    ];
+
+    const customButtonGroup = new IconButtonGroupWidget({
+        id: 'my-tools-widget',
+        placement: 'top-right',
+        orientation: 'vertical',
+        buttons: customButtons,
+        className: 'my-custom-group'
     });
 
     const widgets = [
@@ -271,8 +304,9 @@ export default function Map3D() {
             placement:"top-right",
             container: fullscreenContainerRef.current || undefined
         }),
-        historyWidget,
-        filterWidget
+        customButtonGroup,
+        aboutWidget,
+        sourceCodeWidget
     ];
 
     return (
