@@ -7,7 +7,8 @@
     --button-size: 52px;
 }
 
-.deck-widget.my-custom-widget .deck-widget-icon {
+.deck-widget.my-custom-widget .deck-widget-icon,
+.deck-widget.my-custom-group .deck-widget-icon {
   /* 1. Disable the background-color used for SVG masking */
     background-color: transparent;
 
@@ -24,7 +25,8 @@
 /*
  * 4. Re-map the hover effect to the 'color' property instead of 'background-color'
 */
-.deck-widget.my-custom-widget button:hover .deck-widget-icon {
+.deck-widget.my-custom-widget button:hover .deck-widget-icon,
+.deck-widget.my-custom-group button:hover .deck-widget-icon {
     background-color: transparent; /* Keep background off */
     color: var(--button-icon-hover, rgb(24, 24, 26));
 }
