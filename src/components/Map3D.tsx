@@ -53,7 +53,8 @@ const panelStyle: React.CSSProperties = {
     fontSize: "18px",
     zIndex: 1000,
     transition: "transform 0.3s ease-in-out",
-    overflowY: "auto"
+    overflowY: "auto",
+    color: "#ffffff"
 };
 
 const panelHeaderStyle: React.CSSProperties = {
@@ -62,6 +63,7 @@ const panelHeaderStyle: React.CSSProperties = {
     alignItems: "center",
     borderBottom: "1px solid #ccc",
     paddingBottom: "0.5rem",
+    color: "#ffffff"
 };
 
 const closeButtonStyle: React.CSSProperties = {
@@ -70,25 +72,71 @@ const closeButtonStyle: React.CSSProperties = {
     fontSize: "1.5rem",
     cursor: "pointer",
     padding: "0 0.5rem",
+    color: "#ffffff"
 };    
+
+const filterPanelStyle: React.CSSProperties = {
+    position: "absolute",
+    top: 130,
+    right: 10,
+    width: "250px",
+    padding: "1rem",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    borderRadius: "5px",
+    zIndex: 1000,
+    color: "white",
+    fontFamily: "Arial, sans-serif",
+    boxSizing: "border-box",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+};
 
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
-    const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
-    // const [data, setData] = useState<EarthquakeData[]>([]);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
+    
+    const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
     const animationFrameRef = useRef<number>(0);
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
+    // --- STATES FOR FILTERING ---
+    const [data, setData] = useState<EarthquakeData[]>([]);
+    const [filteredData, setFilteredData] = useState<EarthquakeData[]>([]);
+    const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
+    const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([0, 10]);
+    const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
+
+
     // Fetch earthquake data
-    // useEffect(() => {
-    //     d3.json<EarthquakeData[]>(DATA_URL).then(fetchedData => {
-    //         if(fetchedData) {
-    //             setData(fetchedData);
-    //         }
-    //     });
-    // }, []);
+    useEffect(() => {
+        d3.json<EarthquakeData[]>(DATA_URL).then(fetchedData => {
+            if(fetchedData) {
+                setData(fetchedData);
+
+                const magnitudes = fetchedData.map(d => d.magnitude);
+                const minMagitude = Math.floor(Math.min(...magnitudes) * 10) / 10;
+                const maxMagitude = Math.floor(Math.max(...magnitudes) * 10) / 10;
+                
+                setDataMinMaxMag([minMagitude, maxMagitude]);
+                setMagnitudeRange([minMagitude, maxMagitude]);
+            }
+        });
+    }, []);
+
+    // Filter data based on magnitude range
+    useEffect(() => {
+        const [minMagnitude, maxMagnitude] = magnitudeRange;
+        const result = data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
+        setFilteredData(result);
+    }, [data, magnitudeRange]);
+
+    // Clear selection if filtered out
+    useEffect(() => {
+        if(selectedHypocenter && !filteredData.find(d => d.id === selectedHypocenter.id)) {
+            setSelectedHypocenter(null);
+            setHoverHypocenter(null);
+        }
+    }, [filteredData, selectedHypocenter]);
 
     // Ripple animation effect
     useEffect(() => {
@@ -156,7 +204,7 @@ export default function Map3D() {
     // Scatterplot layer for earthquakes
     const scatterLayer = new ScatterplotLayer<EarthquakeData>({
         id: "earthquakes",
-        data: DATA_URL,
+        data: filteredData,
         radiusUnits: "meters",
         
         getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
@@ -239,12 +287,13 @@ export default function Map3D() {
 
     const handleHistoryClick = (event: MouseEvent) => {
         console.log('Button widget was clicked!', event);
-        alert('You clicked the custom widget!');
+        alert('RECENT EQUAKES - UNDER DEVELOPMENT!');
     };
     
     const handleFilterClick = (event: MouseEvent) => {
         console.log('Button widget was clicked!', event);
-        alert('NOWE FILERTERS!');
+        // alert('EQUAKES FILTER - UNDER DEVELOPMENT!');
+        setIsFilterPanelVisible(prev => !prev);
     };
     
     const handleAboutClick = (event: MouseEvent) => {
@@ -309,6 +358,16 @@ export default function Map3D() {
         sourceCodeWidget
     ];
 
+    const handleMinMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMin = +e.target.value;
+        setMagnitudeRange([newMin, Math.max(magnitudeRange[1])]);
+    }
+
+    const handleMaxMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMax = +e.target.value;
+        setMagnitudeRange([Math.min(magnitudeRange[0]), newMax]);
+    }
+
     return (
         <>
             <div 
@@ -370,6 +429,45 @@ export default function Map3D() {
                         <p><strong>ID:</strong> {selectedHypocenter?.id}</p>
                     </div>
                 </div>
+                {isFilterPanelVisible && (
+                    <div style={filterPanelStyle}>
+                        <h4 style={{ margin: 0, marginBottom: '10px' }}>Filter by Magnitude</h4>
+                        
+                        {/* Min Magnitude Slider */}
+                        <div style={{ marginBottom: '10px' }}>
+                            <label htmlFor="minMag" style={{ display: 'block', marginBottom: '5px' }}>
+                                Min: {magnitudeRange[0].toFixed(1)}
+                            </label>
+                            <input
+                                type="range"
+                                id="minMag"
+                                min={dataMinMaxMag[0]}
+                                max={dataMinMaxMag[1]}
+                                step="0.1"
+                                value={magnitudeRange[0]}
+                                onChange={handleMinMagChange}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                        
+                        {/* Max Magnitude Slider */}
+                        <div>
+                            <label htmlFor="maxMag" style={{ display: 'block', marginBottom: '5px' }}>
+                                Max: {magnitudeRange[1].toFixed(1)}
+                            </label>
+                            <input
+                                type="range"
+                                id="maxMag"
+                                min={dataMinMaxMag[0]}
+                                max={dataMinMaxMag[1]}
+                                step="0.1"
+                                value={magnitudeRange[1]}
+                                onChange={handleMaxMagChange}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
