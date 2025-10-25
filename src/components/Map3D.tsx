@@ -19,6 +19,41 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
 const DATA_URL = "data/earthquakes.json";
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
+const monthMap: { [key: string]: number } = {
+    'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
+    'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+};
+const parseCustomDateTime = (datetime: string): Date => {
+    // Example: "31 January 2018 - 11:07 PM"
+    try {
+        const [datePart, timePart] = datetime.split(' - '); // ["31 January 2018", "11:07 PM"]
+        
+        // Process date part
+        const [dayStr, monthName, yearStr] = datePart.split(' '); // ["31", "January", "2018"]
+        const day = parseInt(dayStr);
+        const month = monthMap[monthName];
+        const year = parseInt(yearStr);
+
+        // Process time part
+        const [time, ampm] = timePart.split(' '); // ["11:07", "PM"]
+        const [hourStr, minuteStr] = time.split(':'); // ["11", "07"]
+        let hour = parseInt(hourStr);
+        const minute = parseInt(minuteStr);
+
+        // Adjust hour for PM/AM
+        if (ampm === 'PM' && hour !== 12) {
+            hour += 12;
+        }
+        if (ampm === 'AM' && hour === 12) {
+            hour = 0; // Midnight case
+        }
+
+        return new Date(year, month, day, hour, minute);
+    } catch (e) {
+        console.error("Failed to parse date string:", datetime, e);
+        return new Date(0); // Return epoch on failure
+    }
+};
 
 interface EarthquakeData {
     id: string;
@@ -77,6 +112,26 @@ const closeButtonStyle: React.CSSProperties = {
     color: "#ffffff"
 };    
 
+const listItemStyle: React.CSSProperties = {
+    padding: '8px 4px',
+    borderBottom: '1px solid #444',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'background-color 0.2s',
+};
+
+const listItemLocationStyle: React.CSSProperties = {
+    display: 'block', 
+    fontSize: '12px', 
+    color: '#ccc'
+};
+
+const listItemDateStyle: React.CSSProperties = {
+    display: 'block', 
+    fontSize: '12px', 
+    color: '#aaa'
+};
+
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
@@ -102,13 +157,22 @@ export default function Map3D() {
             if(fetchedData) {
                 setData(fetchedData);
 
+                // for magnitude filters
                 const magnitudes = fetchedData.map(d => d.magnitude);
                 const minMagitude = Math.floor(Math.min(...magnitudes) * 10) / 10;
                 const maxMagitude = Math.floor(Math.max(...magnitudes) * 10) / 10;
                 
                 setDataMinMaxMag([minMagitude, maxMagitude]);
                 setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMagitude), maxMagitude]);
+                
+                // for recent equakes
+                const sortedData = [...fetchedData].sort((a, b) => 
+                    parseCustomDateTime(b.datetime).getTime() - parseCustomDateTime(a.datetime).getTime()
+                );
+                const top20 = sortedData.slice(0,20);
+                setRecentEarthquakes(top20);
             }
+
         });
     }, []);
 
@@ -155,16 +219,10 @@ export default function Map3D() {
         };
     }, [hoveredHypocenter]);
 
-    // Click handler
-    const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
-        if(object) {
-            setSelectedHypocenter(object);
-            setHoverHypocenter(object);
-            setActivePanel(null);
-
+    const flyToEarthquake = (equake: EarthquakeData) => {
             const pitch = 60;
             const pitchRadians = (pitch * Math.PI) / 180;
-            const depthMeters = object.depth_km * 1000;
+        const depthMeters = equake.depth_km * 1000;
             
             // Convert the meter offset to a change in latitude
             // ~111,321 meters per degree of latitude
@@ -172,23 +230,37 @@ export default function Map3D() {
             const meterOffset = depthMeters * Math.tan(pitchRadians);
             const metersPerDegreeLatitude = 111321;
             const deltaLatitude = meterOffset / metersPerDegreeLatitude;
-            
-            const targetLatitude = object.latitude - deltaLatitude;
+        const targetLatitude = equake.latitude - deltaLatitude;
 
             setViewState(current => ({
                 ...current,
-                longitude: object.longitude,
+            longitude: equake.longitude,
                 latitude: targetLatitude,
                 zoom: 8,
                 pitch: 60,
                 bearing: 0,
                 transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
                 transitionDuration: 2000
-            }));
+        }))
+    };
+
+    const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
+        if(object) {
+            setSelectedHypocenter(object);
+            setHoverHypocenter(object);
+            setActivePanel(null);
+            flyToEarthquake(object);
         } else {
             setSelectedHypocenter(null);
             setHoverHypocenter(null);
         }
+    };
+
+    const handleRecentEarthquakeClick = (quake: EarthquakeData) => {
+        setSelectedHypocenter(quake);
+        setHoverHypocenter(quake);
+        setActivePanel(null);
+        flyToEarthquake(quake);
     };
 
     // Scatterplot layer for earthquakes
@@ -409,7 +481,7 @@ export default function Map3D() {
                     <div style={{ marginTop: "1rem" }}>
                         <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
                         <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
-                        <p><strong>Date:</strong> {selectedHypocenter?.datetime}</p>
+                        <p><strong>Date:</strong> {selectedHypocenter ? parseCustomDateTime(selectedHypocenter.datetime).toLocaleString() : '' }</p>
                         <p><strong>Depth:</strong> {selectedHypocenter?.depth_km} km</p>
                         <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
                         <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
@@ -459,9 +531,25 @@ export default function Map3D() {
                 {/* History Panel */}
                 {activePanel === "history" && (
                     <MasterPanel title="Recent Earthquakes" onClose={() => setActivePanel(null)}>
-                        <p style={{textAlign: 'center', fontStyle: 'italic', margin: 0}}>
-                            (Under Development)
-                        </p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                            {recentEarthquakes.map(quake => (
+                                <li 
+                                    key={quake.id} 
+                                    onClick={() => handleRecentEarthquakeClick(quake)}
+                                    style={listItemStyle}
+                                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#333')}
+                                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                >
+                                    <strong>Mag {quake.magnitude}</strong>
+                                    <span style={listItemLocationStyle}>
+                                        {quake.location}
+                                    </span>
+                                    <span style={listItemDateStyle}>
+                                        { parseCustomDateTime(quake.datetime).toLocaleString() }
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                     </MasterPanel>
                 )}
             </div>
