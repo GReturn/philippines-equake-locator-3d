@@ -187,23 +187,6 @@ export default function Map3D() {
         }
     }, [data, magnitudeRange, selectedHypocenter]);
 
-    // Filter data based on magnitude range
-    // useEffect(() => {
-    //     const [minMagnitude, maxMagnitude] = magnitudeRange;
-    //     const result = data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
-    //     setFilteredData(result);
-    // }, [data, magnitudeRange]);
-
-    // Clear selection if filtered out
-    // useEffect(() => {
-    //     if(selectedHypocenter && !filteredData.find(d => d.id === selectedHypocenter.id)) {
-    //         setSelectedHypocenter(null);
-    //         setHoverHypocenter(null);
-    //     }
-    // }, [filteredData, selectedHypocenter]);
-
-
-
     // Ripple animation effect
     useEffect(() => {
         if(!hoveredHypocenter) {
