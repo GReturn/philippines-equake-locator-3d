@@ -77,8 +77,8 @@ const closeButtonStyle: React.CSSProperties = {
 
 const filterPanelStyle: React.CSSProperties = {
     position: "absolute",
-    top: 130,
-    right: 10,
+    top: 100,
+    right: 105,
     width: "250px",
     padding: "1rem",
     backgroundColor: "rgba(0, 0, 0, 0.8)",
@@ -429,6 +429,7 @@ export default function Map3D() {
                         <p><strong>ID:</strong> {selectedHypocenter?.id}</p>
                     </div>
                 </div>
+
                 {isFilterPanelVisible && (
                     <div style={filterPanelStyle}>
                         <h4 style={{ margin: 0, marginBottom: '10px' }}>Filter by Magnitude</h4>
