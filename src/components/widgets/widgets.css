@@ -9,22 +9,22 @@
 
 .deck-widget.my-custom-widget .deck-widget-icon {
   /* 1. Disable the background-color used for SVG masking */
-  background-color: transparent;
+    background-color: transparent;
 
-  /* 2. Apply the icon color variable to the 'color' property (for fonts) */
-  color: var(--button-icon-idle, #616166);
-  
-  /* 3. Helper styles to make sure the font icon is centered and sized well */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px; /* You may need to tweak this size */
+    /* 2. Apply the icon color variable to the 'color' property (for fonts) */
+    color: var(--button-icon-idle, #616166);
+    
+    /* 3. Helper styles to make sure the font icon is centered and sized well */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px; /* You may need to tweak this size */
 }
 
 /*
  * 4. Re-map the hover effect to the 'color' property instead of 'background-color'
 */
 .deck-widget.my-custom-widget button:hover .deck-widget-icon {
-  background-color: transparent; /* Keep background off */
-  color: var(--button-icon-hover, rgb(24, 24, 26));
+    background-color: transparent; /* Keep background off */
+    color: var(--button-icon-hover, rgb(24, 24, 26));
 }
