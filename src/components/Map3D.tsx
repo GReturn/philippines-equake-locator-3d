@@ -271,7 +271,6 @@ export default function Map3D() {
         
         getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getRadius: d => Math.pow(2, d.magnitude) * 100,
-        // getRadius: 500,
         getFillColor: d => {
             const colorString = colorScale(-d.depth_km * 1000);
             const color = d3.rgb(colorString); 
@@ -327,7 +326,6 @@ export default function Map3D() {
         lineWidthUnits: "pixels",
 
         getPosition: d => [d.longitude, d.latitude, 1],
-        // getRadius: d => Math.pow(2, d.magnitude) * 100,
         getRadius: 500,
         getFillColor: [255, 255, 255, 128],
         getLineColor: [0, 0, 0, 255],        
