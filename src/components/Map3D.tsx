@@ -8,6 +8,10 @@ import { CompassWidget, FullscreenWidget, ZoomWidget } from "@deck.gl/widgets"
 
 import '@deck.gl/widgets/stylesheet.css';
 
+import { CustomIconWidget } from "./widgets/CustomIconWidget";
+
+import "./widgets/widgets.css"
+
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
 const DATA_URL = "data/earthquakes.json";
@@ -232,13 +236,43 @@ export default function Map3D() {
         epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
     ];
 
+    const handleHistoryClick = (event: MouseEvent) => {
+        console.log('Button widget was clicked!', event);
+        alert('You clicked the custom widget!');
+    };
+    
+    const handleFilterClick = (event: MouseEvent) => {
+        console.log('Button widget was clicked!', event);
+        alert('NOWE FILERTERS!');
+    };
+
+    const historyWidget = new CustomIconWidget({
+        id: 'history-widget',
+        placement: 'top-right',
+        title: 'Show History',
+        onClick: handleHistoryClick,
+        iconName: 'history', // for the Google svg icon name: https://fonts.google.com/icons  
+        iconClassName: 'deck-widget-icon-button my-custom-widget-button'
+    });
+
+    const filterWidget = new CustomIconWidget({
+        id: 'filter-widget',
+        placement: 'top-right',
+        title: 'Add Filters',
+        onClick: handleFilterClick,
+        iconName: 'filter_list', // for the Google svg icon name: https://fonts.google.com/icons  
+        iconClassName: 'deck-widget-icon-button my-custom-widget-button'
+    });
+
     const widgets = [
         new ZoomWidget({placement:"top-right"}),
         new CompassWidget({placement:"top-right"}),
         new FullscreenWidget({
             placement:"top-right",
             container: fullscreenContainerRef.current || undefined
-        })
+        }),
+        historyWidget,
+        filterWidget
     ];
 
     return (
