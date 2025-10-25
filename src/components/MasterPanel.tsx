@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 const panelStyle: React.CSSProperties = {
     position: 'absolute',
     top: 10,
-    right: 60,
+    right: 80,
     minWidth: '250px',
     maxWidth: '400px', 
     maxHeight: '60vh', 
