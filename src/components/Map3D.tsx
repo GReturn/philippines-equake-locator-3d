@@ -176,20 +176,33 @@ export default function Map3D() {
         });
     }, []);
 
-    // Filter data based on magnitude range
     useEffect(() => {
         const [minMagnitude, maxMagnitude] = magnitudeRange;
         const result = data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
         setFilteredData(result);
-    }, [data, magnitudeRange]);
 
-    // Clear selection if filtered out
-    useEffect(() => {
-        if(selectedHypocenter && !filteredData.find(d => d.id === selectedHypocenter.id)) {
+        if(selectedHypocenter && !result.find(d => d.id === selectedHypocenter.id)) {
             setSelectedHypocenter(null);
             setHoverHypocenter(null);
         }
-    }, [filteredData, selectedHypocenter]);
+    }, [data, magnitudeRange, selectedHypocenter]);
+
+    // Filter data based on magnitude range
+    // useEffect(() => {
+    //     const [minMagnitude, maxMagnitude] = magnitudeRange;
+    //     const result = data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
+    //     setFilteredData(result);
+    // }, [data, magnitudeRange]);
+
+    // Clear selection if filtered out
+    // useEffect(() => {
+    //     if(selectedHypocenter && !filteredData.find(d => d.id === selectedHypocenter.id)) {
+    //         setSelectedHypocenter(null);
+    //         setHoverHypocenter(null);
+    //     }
+    // }, [filteredData, selectedHypocenter]);
+
+
 
     // Ripple animation effect
     useEffect(() => {
@@ -257,10 +270,25 @@ export default function Map3D() {
     };
 
     const handleRecentEarthquakeClick = (quake: EarthquakeData) => {
+        let [min, max] = magnitudeRange;
+        let rangeChanged = false;
+
+        if(quake.magnitude < min) {
+            min = quake.magnitude;
+            rangeChanged = true;
+        }
+        if(quake.magnitude > max) {
+            max = quake.magnitude;
+            rangeChanged = true;
+        }
+
+        if(rangeChanged) setMagnitudeRange([min, max]);
+
+
+        flyToEarthquake(quake);
         setSelectedHypocenter(quake);
         setHoverHypocenter(quake);
         setActivePanel(null);
-        flyToEarthquake(quake);
     };
 
     // Scatterplot layer for earthquakes
@@ -418,12 +446,12 @@ export default function Map3D() {
 
     const handleMinMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newMin = +e.target.value;
-        setMagnitudeRange([newMin, Math.max(magnitudeRange[1])]);
+        setMagnitudeRange([newMin, Math.max(newMin, magnitudeRange[1])]);
     }
 
     const handleMaxMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newMax = +e.target.value;
-        setMagnitudeRange([Math.min(magnitudeRange[0]), newMax]);
+        setMagnitudeRange([Math.min(magnitudeRange[0], newMax), newMax]);
     }
 
     return (
