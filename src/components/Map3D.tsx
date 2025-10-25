@@ -10,6 +10,7 @@ import '@deck.gl/widgets/stylesheet.css';
 
 import { CustomIconWidget } from "./widgets/CustomIconWidget";
 import { IconButtonGroupWidget, type ButtonDefinition } from "./widgets/IconButtonGroupWidget";
+import { MasterPanel } from "./MasterPanel"
 
 import "./widgets/widgets.css"
 
@@ -17,6 +18,7 @@ const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtz
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
 const DATA_URL = "data/earthquakes.json";
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
+const DEFAULT_MIN_MAGNITUDE = 4.3;
 
 interface EarthquakeData {
     id: string;
@@ -75,26 +77,12 @@ const closeButtonStyle: React.CSSProperties = {
     color: "#ffffff"
 };    
 
-const filterPanelStyle: React.CSSProperties = {
-    position: "absolute",
-    top: 100,
-    right: 105,
-    width: "250px",
-    padding: "1rem",
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    borderRadius: "5px",
-    zIndex: 1000,
-    color: "white",
-    fontFamily: "Arial, sans-serif",
-    boxSizing: "border-box",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-};
-
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
     
+    const [activePanel, setActivePanel] = useState<"filter" | "history" | null>(null); // TODO add more if needed
     const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
     const animationFrameRef = useRef<number>(0);
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
@@ -103,8 +91,9 @@ export default function Map3D() {
     const [data, setData] = useState<EarthquakeData[]>([]);
     const [filteredData, setFilteredData] = useState<EarthquakeData[]>([]);
     const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
-    const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([0, 10]);
-    const [isFilterPanelVisible, setIsFilterPanelVisible] = useState(false);
+    const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([DEFAULT_MIN_MAGNITUDE, 10]);
+    const [recentEarthquakes, setRecentEarthquakes] = useState<EarthquakeData[]>([]);
+
 
 
     // Fetch earthquake data
@@ -118,7 +107,7 @@ export default function Map3D() {
                 const maxMagitude = Math.floor(Math.max(...magnitudes) * 10) / 10;
                 
                 setDataMinMaxMag([minMagitude, maxMagitude]);
-                setMagnitudeRange([minMagitude, maxMagitude]);
+                setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMagitude), maxMagitude]);
             }
         });
     }, []);
@@ -171,6 +160,7 @@ export default function Map3D() {
         if(object) {
             setSelectedHypocenter(object);
             setHoverHypocenter(object);
+            setActivePanel(null);
 
             const pitch = 60;
             const pitchRadians = (pitch * Math.PI) / 180;
@@ -285,15 +275,12 @@ export default function Map3D() {
         epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
     ];
 
-    const handleHistoryClick = (event: MouseEvent) => {
-        console.log('Button widget was clicked!', event);
-        alert('RECENT EQUAKES - UNDER DEVELOPMENT!');
+    const handleHistoryClick = () => {
+        setActivePanel(prev => prev === "history" ? null : "history");
     };
     
-    const handleFilterClick = (event: MouseEvent) => {
-        console.log('Button widget was clicked!', event);
-        // alert('EQUAKES FILTER - UNDER DEVELOPMENT!');
-        setIsFilterPanelVisible(prev => !prev);
+    const handleFilterClick = () => {
+        setActivePanel(prev => prev === "filter" ? null : "filter");
     };
     
     const handleAboutClick = (event: MouseEvent) => {
@@ -430,10 +417,9 @@ export default function Map3D() {
                     </div>
                 </div>
 
-                {isFilterPanelVisible && (
-                    <div style={filterPanelStyle}>
-                        <h4 style={{ margin: 0, marginBottom: '10px' }}>Filter by Magnitude</h4>
-                        
+                {/* Filter Panel */}
+                {activePanel === "filter" && (
+                    <MasterPanel title="Filter by Magnitude" onClose={() => setActivePanel(null)}>
                         {/* Min Magnitude Slider */}
                         <div style={{ marginBottom: '10px' }}>
                             <label htmlFor="minMag" style={{ display: 'block', marginBottom: '5px' }}>
@@ -467,7 +453,16 @@ export default function Map3D() {
                                 style={{ width: '100%' }}
                             />
                         </div>
-                    </div>
+                    </MasterPanel>
+                )}
+
+                {/* History Panel */}
+                {activePanel === "history" && (
+                    <MasterPanel title="Recent Earthquakes" onClose={() => setActivePanel(null)}>
+                        <p style={{textAlign: 'center', fontStyle: 'italic', margin: 0}}>
+                            (Under Development)
+                        </p>
+                    </MasterPanel>
                 )}
             </div>
         </>
