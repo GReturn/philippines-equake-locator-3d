@@ -4,7 +4,7 @@ export const panelStyle: React.CSSProperties = {
     left: 10,
     minWidth: '20px',
     maxWidth: '40vh', 
-    maxHeight: '60vh', 
+    maxHeight: '100vh', 
     padding: "1rem",
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     boxShadow: "-2px 0 8px rgba(0, 0, 0, 0.3)",
