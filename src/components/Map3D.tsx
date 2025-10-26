@@ -140,7 +140,7 @@ export default function Map3D() {
     const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
     
-    const [activePanel, setActivePanel] = useState<"filter" | "history" | null>(null); // TODO add more if needed
+    const [activePanel, setActivePanel] = useState<"filter" | "history" | "major-quakes" | null>(null); // TODO add more if needed
     const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
     const animationFrameRef = useRef<number>(0);
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
@@ -151,6 +151,7 @@ export default function Map3D() {
     const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
     const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([DEFAULT_MIN_MAGNITUDE, 10]);
     const [recentEarthquakes, setRecentEarthquakes] = useState<EarthquakeData[]>([]);
+    const [majorEarthquakes, setMajorEarthquakes] = useState<EarthquakeData[]>([]);
 
 
 
@@ -168,17 +169,25 @@ export default function Map3D() {
                 setDataMinMaxMag([minMagitude, maxMagitude]);
                 setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMagitude), maxMagitude]);
                 
-                // for recent equakes
+                // for recent quakes
                 const sortedData = [...fetchedData].sort((a, b) => 
                     parseCustomDateTime(b.datetime).getTime() - parseCustomDateTime(a.datetime).getTime()
                 );
-                const top20 = sortedData.slice(0,20);
-                setRecentEarthquakes(top20);
+                const recent100 = sortedData.slice(0,100);
+                setRecentEarthquakes(recent100);
+
+                // for major quakes
+                const majorQuakes = [...fetchedData].sort((a, b) =>
+                    b.magnitude - a.magnitude
+                );
+                const major10 = majorQuakes.slice(0, 30);
+                setMajorEarthquakes(major10);
             }
 
         });
     }, []);
 
+    // For filters
     useEffect(() => {
         const [minMagnitude, maxMagnitude] = magnitudeRange;
         const result = data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
@@ -362,10 +371,13 @@ export default function Map3D() {
     const handleHistoryClick = () => {
         setActivePanel(prev => prev === "history" ? null : "history");
     };
-    
     const handleFilterClick = () => {
         setActivePanel(prev => prev === "filter" ? null : "filter");
     };
+    const handleMajorQuakesClick = () => {
+        setActivePanel(prev => prev === "major-quakes" ? null : "major-quakes");
+    }
+
     
     const handleAboutClick = (event: MouseEvent) => {
         console.log('Button widget was clicked!', event);
@@ -404,9 +416,15 @@ export default function Map3D() {
         },
         {
             id: 'history-widget',
-            title: 'Recent Earthquakes',
+            title: 'Recent 100 Earthquakes',
             iconName: 'list',
             onClick: handleHistoryClick
+        },
+        {
+            id: 'major-quakes-widget',
+            title: '30 Major Earthquakes',
+            iconName: 'earthquake',
+            onClick: handleMajorQuakesClick
         }
     ];
 
@@ -543,9 +561,34 @@ export default function Map3D() {
 
                 {/* History Panel */}
                 {activePanel === "history" && (
-                    <MasterPanel title="Recent Earthquakes" onClose={() => setActivePanel(null)}>
+                    <MasterPanel title="Recent 100 Earthquakes" onClose={() => setActivePanel(null)}>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                             {recentEarthquakes.map(quake => (
+                                <li 
+                                    key={quake.id} 
+                                    onClick={() => handleRecentEarthquakeClick(quake)}
+                                    style={listItemStyle}
+                                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#333')}
+                                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                >
+                                    <strong>Mag {quake.magnitude}</strong>
+                                    <span style={listItemLocationStyle}>
+                                        {quake.location}
+                                    </span>
+                                    <span style={listItemDateStyle}>
+                                        { parseCustomDateTime(quake.datetime).toLocaleString() }
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </MasterPanel>
+                )}
+
+                {/* Major Quakes Panel */}
+                {activePanel === "major-quakes" && (
+                    <MasterPanel title="30 Major Earthquakes" onClose={() => setActivePanel(null)}>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                            {majorEarthquakes.map(quake => (
                                 <li 
                                     key={quake.id} 
                                     onClick={() => handleRecentEarthquakeClick(quake)}
