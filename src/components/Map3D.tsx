@@ -368,7 +368,10 @@ export default function Map3D() {
                     height: '100vh',
                 }}
             >
-                <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+                <div 
+                    style={{ position: 'relative', width: '100vw', height: '100vh' }}
+                    onContextMenu={(e) => e.preventDefault()}
+                >
                     <DeckGL
                         viewState={viewState}
                         onViewStateChange={e => setViewState(e.viewState as MapViewState)}
