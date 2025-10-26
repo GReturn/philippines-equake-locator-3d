@@ -16,13 +16,15 @@ import "./widgets/widgets.css"
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
-const DATA_URL = "data/earthquakes.json";
+const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-data-scraper/refs/heads/main/data/earthquakes.json";
+
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
 const monthMap: { [key: string]: number } = {
     'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
     'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
 };
+
 const parseCustomDateTime = (datetime: string): Date => {
     // Example: "31 January 2018 - 11:07 PM"
     try {
