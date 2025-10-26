@@ -154,7 +154,6 @@ export default function Map3D() {
     const [majorEarthquakes, setMajorEarthquakes] = useState<EarthquakeData[]>([]);
 
 
-
     // Fetch earthquake data
     useEffect(() => {
         d3.json<EarthquakeData[]>(DATA_URL).then(fetchedData => {
@@ -186,7 +185,6 @@ export default function Map3D() {
 
         });
     }, []);
-
     // For filters
     useEffect(() => {
         const [minMagnitude, maxMagnitude] = magnitudeRange;
@@ -198,7 +196,6 @@ export default function Map3D() {
             setHoverHypocenter(null);
         }
     }, [data, magnitudeRange, selectedHypocenter]);
-
     // Ripple animation effect
     useEffect(() => {
         if(!hoveredHypocenter) {
@@ -227,6 +224,84 @@ export default function Map3D() {
         };
     }, [hoveredHypocenter]);
 
+    // Scatterplot layer for earthquakes
+    const scatterLayer = new ScatterplotLayer<EarthquakeData>({
+        id: "earthquakes",
+        data: filteredData,
+        radiusUnits: "meters",
+        
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getRadius: d => Math.pow(2, d.magnitude) * 100,
+        getFillColor: d => {
+            const colorString = colorScale(-d.depth_km * 1000);
+            const color = d3.rgb(colorString); 
+            return [color.r, color.g, color.b];
+        },
+
+        radiusMinPixels: 2,
+        
+        pickable: true,
+        autoHighlight: true,
+        billboard: true,
+    });
+    // Line layer for depth lines
+    const lineLayer = new LineLayer<EarthquakeData>({
+        id: "depth-lines",
+        data: hoveredHypocenter ? [hoveredHypocenter] : [],
+        
+        getSourcePosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getTargetPosition: d => [d.longitude, d.latitude, 0],
+        getColor: [255, 255, 255],
+        getWidth: 2,
+        
+        pickable: false,
+    });
+    // Ripple effect layer
+    const rippleLayer = new ScatterplotLayer<EarthquakeData>({
+        id: "epicenter-ripple",
+        data: hoveredHypocenter ? [hoveredHypocenter] : [],
+        radiusUnits: "meters",
+        
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getRadius: () => rippleAnimation.scale,
+        getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
+        
+        radiusMinPixels: 0,
+        radiusMaxPixels: 50000,
+        pickable: false,
+        billboard: true,
+
+        updateTriggers: {
+            getRadius: [rippleAnimation.scale],
+            getFillColor: [rippleAnimation.opacity]
+        }
+    });
+    // Epicenter circle layer
+    const epicenterCircleLayer = new ScatterplotLayer<EarthquakeData>({
+        id: "epicenter-circle",
+        data: hoveredHypocenter ? [hoveredHypocenter] : [],
+        radiusUnits: "meters",
+        lineWidthUnits: "pixels",
+
+        getPosition: d => [d.longitude, d.latitude, 1],
+        getRadius: 500,
+        getFillColor: [255, 255, 255, 128],
+        getLineColor: [0, 0, 0, 255],        
+        getLineWidth: 2,
+        
+        radiusMinPixels: 4,
+        
+        pickable: false,
+        billboard: true,
+
+    });
+    const layers = [
+        scatterLayer,
+        lineLayer,
+        rippleLayer, 
+        epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
+    ];
+    
     const flyToEarthquake = (equake: EarthquakeData) => {
         const pitch = 60;
         const pitchRadians = (pitch * Math.PI) / 180;
@@ -251,7 +326,6 @@ export default function Map3D() {
             transitionDuration: 2000
         }))
     };
-
     const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
         if(object) {
             setSelectedHypocenter(object);
@@ -263,7 +337,6 @@ export default function Map3D() {
             setHoverHypocenter(null);
         }
     };
-
     const handleRecentEarthquakeClick = (quake: EarthquakeData) => {
         let [min, max] = magnitudeRange;
         let rangeChanged = false;
@@ -284,89 +357,14 @@ export default function Map3D() {
         setHoverHypocenter(quake);
         setActivePanel(null);
     };
-
-    // Scatterplot layer for earthquakes
-    const scatterLayer = new ScatterplotLayer<EarthquakeData>({
-        id: "earthquakes",
-        data: filteredData,
-        radiusUnits: "meters",
-        
-        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getRadius: d => Math.pow(2, d.magnitude) * 100,
-        getFillColor: d => {
-            const colorString = colorScale(-d.depth_km * 1000);
-            const color = d3.rgb(colorString); 
-            return [color.r, color.g, color.b];
-        },
-
-        radiusMinPixels: 2,
-        
-        pickable: true,
-        autoHighlight: true,
-        billboard: true,
-    });
-
-    // Line layer for depth lines
-    const lineLayer = new LineLayer<EarthquakeData>({
-        id: "depth-lines",
-        data: hoveredHypocenter ? [hoveredHypocenter] : [],
-        
-        getSourcePosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getTargetPosition: d => [d.longitude, d.latitude, 0],
-        getColor: [255, 255, 255],
-        getWidth: 2,
-        
-        pickable: false,
-    });
-
-    // Ripple effect layer
-    const rippleLayer = new ScatterplotLayer<EarthquakeData>({
-        id: "epicenter-ripple",
-        data: hoveredHypocenter ? [hoveredHypocenter] : [],
-        radiusUnits: "meters",
-        
-        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getRadius: () => rippleAnimation.scale,
-        getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
-        
-        radiusMinPixels: 0,
-        radiusMaxPixels: 50000,
-        pickable: false,
-        billboard: true,
-
-        updateTriggers: {
-            getRadius: [rippleAnimation.scale],
-            getFillColor: [rippleAnimation.opacity]
-        }
-    });
-
-    // Epicenter circle layer
-    const epicenterCircleLayer = new ScatterplotLayer<EarthquakeData>({
-        id: "epicenter-circle",
-        data: hoveredHypocenter ? [hoveredHypocenter] : [],
-        radiusUnits: "meters",
-        lineWidthUnits: "pixels",
-
-        getPosition: d => [d.longitude, d.latitude, 1],
-        getRadius: 500,
-        getFillColor: [255, 255, 255, 128],
-        getLineColor: [0, 0, 0, 255],        
-        getLineWidth: 2,
-        
-        radiusMinPixels: 4,
-        
-        pickable: false,
-        billboard: true,
-
-    });
-
-    const layers = [
-        scatterLayer,
-        lineLayer,
-        rippleLayer, 
-        epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
-    ];
-
+    const handleMinMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMin = +e.target.value;
+        setMagnitudeRange([newMin, Math.max(newMin, magnitudeRange[1])]);
+    }
+    const handleMaxMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMax = +e.target.value;
+        setMagnitudeRange([Math.min(magnitudeRange[0], newMax), newMax]);
+    }
     const handleHistoryClick = () => {
         setActivePanel(prev => prev === "history" ? null : "history");
     };
@@ -376,13 +374,10 @@ export default function Map3D() {
     const handleMajorQuakesClick = () => {
         setActivePanel(prev => prev === "major-quakes" ? null : "major-quakes");
     }
-
-    
     const handleAboutClick = (event: MouseEvent) => {
         console.log('Button widget was clicked!', event);
         alert('Check historical earthquake from 2018 to October 2025');
     };
-
     const handleSourceCodeClick = () => {
         open("https://github.com/GReturn/philippines-equake-locator-3d");
     };
@@ -395,7 +390,6 @@ export default function Map3D() {
         iconName: 'code', // for the Google svg icon name: https://fonts.google.com/icons  
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
     });
-
     const aboutWidget = new CustomIconWidget({
         id: 'about-widget',
         placement: 'bottom-right',
@@ -404,7 +398,6 @@ export default function Map3D() {
         iconName: 'info',
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
     });
-
     const customButtons: ButtonDefinition[] = 
     [
         {
@@ -426,7 +419,6 @@ export default function Map3D() {
             onClick: handleMajorQuakesClick
         }
     ];
-
     const customButtonGroup = new IconButtonGroupWidget({
         id: 'my-tools-widget',
         placement: 'top-right',
@@ -446,16 +438,6 @@ export default function Map3D() {
         aboutWidget,
         sourceCodeWidget
     ];
-
-    const handleMinMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMin = +e.target.value;
-        setMagnitudeRange([newMin, Math.max(newMin, magnitudeRange[1])]);
-    }
-
-    const handleMaxMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMax = +e.target.value;
-        setMagnitudeRange([Math.min(magnitudeRange[0], newMax), newMax]);
-    }
 
     return (
         <>
