@@ -86,7 +86,7 @@ export default function Map3D() {
                 setData(processedData);
 
                 // for magnitude filters
-                const magnitudes = fetchedData.map(d => d.magnitude);
+                const magnitudes = processedData.map(d => d.magnitude);
                 const minMagitude = Math.floor(Math.min(...magnitudes) * 10) / 10;
                 const maxMagitude = Math.floor(Math.max(...magnitudes) * 10) / 10;
                 
@@ -94,14 +94,14 @@ export default function Map3D() {
                 setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMagitude), maxMagitude]);
                 
                 // for recent quakes
-                const sortedData = [...fetchedData].sort((a, b) => 
+                const sortedData = [...processedData].sort((a, b) => 
                     parseCustomDateTime(b.datetime).getTime() - parseCustomDateTime(a.datetime).getTime()
                 );
                 const recent100 = sortedData.slice(0,100);
                 setRecentEarthquakes(recent100);
 
                 // for major quakes
-                const majorQuakes = [...fetchedData].sort((a, b) =>
+                const majorQuakes = [...processedData].sort((a, b) =>
                     b.magnitude - a.magnitude
                 );
                 const major10 = majorQuakes.slice(0, 30);
@@ -257,7 +257,7 @@ export default function Map3D() {
             transitionDuration: 2000
         }))
     };
-    const handleMapClick = ({ object }: { object?: EarthquakeData}) => {
+    const handleMapClick = ({ object }: { object?: ProcessedEarthquakeData}) => {
         if(object) {
             setSelectedHypocenter(object);
             setHoverHypocenter(object);
@@ -268,7 +268,7 @@ export default function Map3D() {
             setHoverHypocenter(null);
         }
     };
-    const handleRecentEarthquakeClick = (quake: EarthquakeData) => {
+    const handleRecentEarthquakeClick = (quake: ProcessedEarthquakeData) => {
         let [min, max] = magnitudeRange;
         let rangeChanged = false;
 
@@ -393,7 +393,7 @@ export default function Map3D() {
                         widgets={widgets}
                         onHover={info => {
                             if(selectedHypocenter) return;
-                            setHoverHypocenter(info.object as EarthquakeData | null);
+                            setHoverHypocenter(info.object as ProcessedEarthquakeData | null);
                         }}
                         onClick={handleMapClick}
                         getTooltip={({object}) => object && (
