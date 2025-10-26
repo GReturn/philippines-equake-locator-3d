@@ -12,7 +12,20 @@ import { CustomIconWidget } from "./widgets/CustomIconWidget";
 import { IconButtonGroupWidget, type ButtonDefinition } from "./widgets/IconButtonGroupWidget";
 import { MasterPanel } from "./MasterPanel"
 
-import "./widgets/widgets.css"
+import "./widgets/widgets.css";
+
+import { parseCustomDateTime } from "../utils/datetime-parser";
+import { type EarthquakeData } from "../types/earthquake";
+import { INITIAL_VIEW_STATE } from "../constants/map";
+import { 
+    panelStyle, 
+    panelHeaderStyle,
+    closeButtonStyle, 
+    listItemStyle, 
+    listItemDateStyle, 
+    listItemLocationStyle,
+
+} from "../styles/earthquakePanelStyles";
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
@@ -20,120 +33,6 @@ const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-
 
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
-const monthMap: { [key: string]: number } = {
-    'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
-    'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
-};
-
-const parseCustomDateTime = (datetime: string): Date => {
-    // Example: "31 January 2018 - 11:07 PM"
-    try {
-        const [datePart, timePart] = datetime.split(' - '); // ["31 January 2018", "11:07 PM"]
-        
-        // Process date part
-        const [dayStr, monthName, yearStr] = datePart.split(' '); // ["31", "January", "2018"]
-        const day = parseInt(dayStr);
-        const month = monthMap[monthName];
-        const year = parseInt(yearStr);
-
-        // Process time part
-        const [time, ampm] = timePart.split(' '); // ["11:07", "PM"]
-        const [hourStr, minuteStr] = time.split(':'); // ["11", "07"]
-        let hour = parseInt(hourStr);
-        const minute = parseInt(minuteStr);
-
-        // Adjust hour for PM/AM
-        if (ampm === 'PM' && hour !== 12) {
-            hour += 12;
-        }
-        if (ampm === 'AM' && hour === 12) {
-            hour = 0; // Midnight case
-        }
-
-        return new Date(year, month, day, hour, minute);
-    } catch (e) {
-        console.error("Failed to parse date string:", datetime, e);
-        return new Date(0); // Return epoch on failure
-    }
-};
-
-interface EarthquakeData {
-    id: string;
-    datetime: string;
-    latitude: number;
-    longitude: number;
-    depth_km: number;
-    magnitude: number;
-    location: string;
-    month: string;
-    year: number;
-}
-
-const INITIAL_VIEW_STATE = {
-    longitude: 122,
-    latitude: 12.5,
-    zoom: 5.5,
-    pitch: 50,
-    bearing: 0
-};
-
-const panelStyle: React.CSSProperties = {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    minWidth: '20px',
-    maxWidth: '40vh', 
-    maxHeight: '60vh', 
-    padding: "1rem",
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    boxShadow: "-2px 0 8px rgba(0, 0, 0, 0.3)",
-    boxSizing: "border-box",
-    borderRadius: "5px",
-    fontFamily: "Arial, sans-serif",
-    fontSize: "18px",
-    zIndex: 1000,
-    transition: "transform 0.3s ease-in-out",
-    overflowY: "auto",
-    color: "#ffffff"
-};
-
-const panelHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: "1px solid #ccc",
-    paddingBottom: "0.5rem",
-    color: "#ffffff"
-};
-
-const closeButtonStyle: React.CSSProperties = {
-    background: "none",
-    border: "none",
-    fontSize: "1.5rem",
-    cursor: "pointer",
-    padding: "0 0.5rem",
-    color: "#ffffff"
-};
-
-const listItemStyle: React.CSSProperties = {
-    padding: '8px 4px',
-    borderBottom: '1px solid #444',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'background-color 0.2s',
-};
-
-const listItemLocationStyle: React.CSSProperties = {
-    display: 'block', 
-    fontSize: '12px', 
-    color: '#ccc'
-};
-
-const listItemDateStyle: React.CSSProperties = {
-    display: 'block', 
-    fontSize: '12px', 
-    color: '#aaa'
-};
 
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
