@@ -279,7 +279,6 @@ export default function Map3D() {
 
         if(rangeChanged) setMagnitudeRange([min, max]);
 
-
         flyToEarthquake(quake);
         setSelectedHypocenter(quake);
         setHoverHypocenter(quake);
