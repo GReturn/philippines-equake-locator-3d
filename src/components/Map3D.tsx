@@ -3,7 +3,7 @@ import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
-import { FlyToInterpolator, type MapViewState } from "deck.gl";
+import { FlyToInterpolator, type MapViewState, type PickingInfo } from "deck.gl";
 import {
     CompassWidget, 
     FullscreenWidget, 
@@ -20,6 +20,7 @@ import "./widgets/widgets.css";
 
 import { parseCustomDateTime } from "../utils/datetime-parser";
 import { type EarthquakeData } from "../types/earthquake";
+import { type ProcessedEarthquakeData } from "../types/processed-earthquake";
 import { INITIAL_VIEW_STATE } from "../constants/map";
 import { 
     panelStyle, 
@@ -43,10 +44,6 @@ const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
 
-type ProcessedEarthquakeData = EarthquakeData & {
-    _color: [number, number, number];
-    _dateTime: Date;
-}
 
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<ProcessedEarthquakeData | null>(null);
@@ -156,86 +153,8 @@ export default function Map3D() {
             if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
     }, [hoveredHypocenter]);
-
-    // Scatterplot layer for earthquakes
-    const scatterLayer = new ScatterplotLayer<EarthquakeData>({
-        id: "earthquakes",
-        data: filteredData,
-        radiusUnits: "meters",
-        
-        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getRadius: d => Math.pow(2, d.magnitude) * 100,
-        getFillColor: d => {
-            const colorString = colorScale(-d.depth_km * 1000);
-            const color = d3.rgb(colorString); 
-            return [color.r, color.g, color.b];
-        },
-
-        radiusMinPixels: 2,
-        
-        pickable: true,
-        autoHighlight: true,
-        billboard: true,
-    });
-    // Line layer for depth lines
-    const lineLayer = new LineLayer<EarthquakeData>({
-        id: "depth-lines",
-        data: hoveredHypocenter ? [hoveredHypocenter] : [],
-        
-        getSourcePosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getTargetPosition: d => [d.longitude, d.latitude, 0],
-        getColor: [255, 255, 255],
-        getWidth: 2,
-        
-        pickable: false,
-    });
-    // Ripple effect layer
-    const rippleLayer = new ScatterplotLayer<EarthquakeData>({
-        id: "epicenter-ripple",
-        data: hoveredHypocenter ? [hoveredHypocenter] : [],
-        radiusUnits: "meters",
-        
-        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getRadius: () => rippleAnimation.scale,
-        getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
-        
-        radiusMinPixels: 0,
-        radiusMaxPixels: 50000,
-        pickable: false,
-        billboard: true,
-
-        updateTriggers: {
-            getRadius: [rippleAnimation.scale],
-            getFillColor: [rippleAnimation.opacity]
-        }
-    });
-    // Epicenter circle layer
-    const epicenterCircleLayer = new ScatterplotLayer<EarthquakeData>({
-        id: "epicenter-circle",
-        data: hoveredHypocenter ? [hoveredHypocenter] : [],
-        radiusUnits: "meters",
-        lineWidthUnits: "pixels",
-
-        getPosition: d => [d.longitude, d.latitude, 1],
-        getRadius: 500,
-        getFillColor: [255, 255, 255, 128],
-        getLineColor: [0, 0, 0, 255],        
-        getLineWidth: 2,
-        
-        radiusMinPixels: 4,
-        
-        pickable: false,
-        billboard: true,
-
-    });
-    const layers = [
-        scatterLayer,
-        lineLayer,
-        rippleLayer, 
-        epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
-    ];
     
-    const flyToEarthquake = (equake: EarthquakeData) => {
+    const flyToEarthquake = useCallback((equake: ProcessedEarthquakeData) => {
         const pitch = 60;
         const pitchRadians = (pitch * Math.PI) / 180;
         const depthMeters = equake.depth_km * 1000;
@@ -258,8 +177,8 @@ export default function Map3D() {
             transitionInterpolator: new FlyToInterpolator({ speed: 1.5 }),
             transitionDuration: 2000
         }))
-    };
-    const handleMapClick = ({ object }: { object?: ProcessedEarthquakeData}) => {
+    }, []);
+    const handleMapClick = useCallback(({ object }: { object?: ProcessedEarthquakeData}) => {
         if(object) {
             setSelectedHypocenter(object);
             setHoverHypocenter(object);
@@ -269,8 +188,9 @@ export default function Map3D() {
             setSelectedHypocenter(null);
             setHoverHypocenter(null);
         }
-    };
-    const handleRecentEarthquakeClick = (quake: ProcessedEarthquakeData) => {
+    }, [flyToEarthquake]);
+
+    const handleRecentEarthquakeClick = useCallback((quake: ProcessedEarthquakeData) => {
         let [min, max] = magnitudeRange;
         let rangeChanged = false;
 
@@ -289,48 +209,143 @@ export default function Map3D() {
         setSelectedHypocenter(quake);
         setHoverHypocenter(quake);
         setActivePanel(null);
-    };
-    const handleMinMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMin = +e.target.value;
-        setMagnitudeRange([newMin, Math.max(newMin, magnitudeRange[1])]);
-    }
-    const handleMaxMagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newMax = +e.target.value;
-        setMagnitudeRange([Math.min(magnitudeRange[0], newMax), newMax]);
-    }
-    const handleHistoryClick = () => {
-        setActivePanel(prev => prev === "history" ? null : "history");
-    };
-    const handleFilterClick = () => {
-        setActivePanel(prev => prev === "filter" ? null : "filter");
-    };
-    const handleMajorQuakesClick = () => {
-        setActivePanel(prev => prev === "major-quakes" ? null : "major-quakes");
-    }
-    const handleAboutClick = () => {
-        alert('Check historical earthquakes in the Philippine region dating as far back as 2018. Data obtained from PHIVOLCS. Made by Rafael Mendoza.');
-    };
-    const handleSourceCodeClick = () => {
-        open("https://github.com/GReturn/philippines-equake-locator-3d");
-    };
+    }, [magnitudeRange, flyToEarthquake]);
 
-    const sourceCodeWidget = new CustomIconWidget({
+    const handleMinMagChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMin = +e.target.value;
+        setMagnitudeRange(([, oldMax]) => [newMin, Math.max(newMin, oldMax)]);
+    }, []);
+    const handleMaxMagChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newMax = +e.target.value;
+        setMagnitudeRange(([oldMin, ]) => [Math.min(oldMin, newMax), newMax]);
+    }, []);
+    const handleHistoryClick = useCallback(() => {
+        setActivePanel(prev => prev === "history" ? null : "history");
+    }, []);
+    const handleFilterClick = useCallback(() => {
+        setActivePanel(prev => prev === "filter" ? null : "filter");
+    }, []);
+    const handleMajorQuakesClick = useCallback(() => {
+        setActivePanel(prev => prev === "major-quakes" ? null : "major-quakes");
+    }, []);
+    const handleAboutClick = useCallback(() => {
+        alert('Check historical earthquakes in the Philippine region dating as far back as 2018. Data obtained from PHIVOLCS. Made by Rafael Mendoza.');
+    }, []);
+    const handleSourceCodeClick = useCallback(() => {
+        open("https://github.com/GReturn/philippines-equake-locator-3d");
+    }, []);
+    const handleHover = useCallback((info: { object?: ProcessedEarthquakeData | null }) => {
+        if(selectedHypocenter) return;
+        setHoverHypocenter(info.object || null);
+    }, [selectedHypocenter]);
+    const handleGetTooltip = useCallback(({object}: PickingInfo) => { 
+        const data = object as ProcessedEarthquakeData | null;
+
+        if(data) return  `Mag ${object.magnitude} Earthquake\n- Depth: ${object.depth_km} km`
+        return null;
+    }, []);
+    const handleCloseDetailsPanel = useCallback(() => {
+        setSelectedHypocenter(null);
+        setHoverHypocenter(null);
+    }, []);
+
+    const hoveredData = useMemo(() => {
+        return hoveredHypocenter ? [hoveredHypocenter] : [];
+    }, [hoveredHypocenter]);
+
+    // Scatterplot layer for earthquakes
+    const scatterLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
+        id: "earthquakes",
+        data: filteredData,
+        radiusUnits: "meters",
+        
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getRadius: d => Math.pow(2, d.magnitude) * 100,
+        getFillColor: d => d._color,
+
+        radiusMinPixels: 2,
+        
+        pickable: true,
+        autoHighlight: true,
+        billboard: true,
+    }), [filteredData]);
+
+    // Line layer for depth lines
+    const lineLayer = useMemo(() => new LineLayer<ProcessedEarthquakeData>({
+        id: "depth-lines",
+        data: hoveredData,
+        
+        getSourcePosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getTargetPosition: d => [d.longitude, d.latitude, 0],
+        getColor: [255, 255, 255],
+        getWidth: 2,
+        
+        pickable: false,
+    }), [hoveredData]);
+    // Ripple effect layer
+    const rippleLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
+        id: "epicenter-ripple",
+        data: hoveredData,
+        radiusUnits: "meters",
+        
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
+        getRadius: () => rippleAnimation.scale,
+        getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
+        
+        radiusMinPixels: 0,
+        radiusMaxPixels: 50000,
+        pickable: false,
+        billboard: true,
+
+        updateTriggers: {
+            getRadius: [rippleAnimation.scale],
+            getFillColor: [rippleAnimation.opacity]
+        }
+    }), [hoveredData, rippleAnimation]);
+    // Epicenter circle layer
+    const epicenterCircleLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
+        id: "epicenter-circle",
+        data: hoveredData,
+        radiusUnits: "meters",
+        lineWidthUnits: "pixels",
+
+        getPosition: d => [d.longitude, d.latitude, 1],
+        getRadius: 500,
+        getFillColor: [255, 255, 255, 128],
+        getLineColor: [0, 0, 0, 255],        
+        getLineWidth: 2,
+        
+        radiusMinPixels: 4,
+        
+        pickable: false,
+        billboard: true,
+
+    }), [hoveredData]);
+
+    const layers = useMemo(() => [
+        scatterLayer,
+        lineLayer,
+        rippleLayer, 
+        epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
+    ], [scatterLayer, lineLayer, rippleLayer, epicenterCircleLayer]);
+
+    const sourceCodeWidget = useMemo(() => new CustomIconWidget({
         id: 'source-code-widget',
         placement: 'bottom-right',
         title: 'Source Code',
         onClick: handleSourceCodeClick,
         iconName: 'code', // for the Google svg icon name: https://fonts.google.com/icons  
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
-    });
-    const aboutWidget = new CustomIconWidget({
+    }), [handleSourceCodeClick]);
+    const aboutWidget = useMemo(() => new CustomIconWidget({
         id: 'about-widget',
         placement: 'bottom-right',
         title: 'About',
         onClick: handleAboutClick,
         iconName: 'info',
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
-    });
-    const customButtons: ButtonDefinition[] = 
+    }), [handleAboutClick]);
+    const customButtons: ButtonDefinition[] = useMemo(() => 
     [
         {
             id: 'filter-widget',
@@ -350,27 +365,28 @@ export default function Map3D() {
             iconName: 'earthquake',
             onClick: handleMajorQuakesClick
         }
-    ];
-    const customButtonGroup = new IconButtonGroupWidget({
+    ], [handleFilterClick, handleHistoryClick, handleMajorQuakesClick]);
+    const customButtonGroup = useMemo(() => new IconButtonGroupWidget({
         id: 'my-tools-widget',
         placement: 'top-right',
         orientation: 'vertical',
         buttons: customButtons,
         className: 'my-custom-group'
-    });
+    }), [customButtons]);
 
-    const widgets = [
+    const fullscreenContainer = fullscreenContainerRef.current;
+    const widgets = useMemo(() => [
         // new LoadingWidget,
         new ZoomWidget({placement:"top-right"}),
         new CompassWidget({placement:"top-right"}),
         new FullscreenWidget({
             placement:"top-right",
-            container: fullscreenContainerRef.current || undefined
+            container: fullscreenContainer || undefined
         }),
         customButtonGroup,
         aboutWidget,
         sourceCodeWidget
-    ];
+    ], [fullscreenContainer, aboutWidget, customButtonGroup, sourceCodeWidget]);
 
     return (
         <>
@@ -393,15 +409,9 @@ export default function Map3D() {
                         controller
                         layers={layers}
                         widgets={widgets}
-                        onHover={info => {
-                            if(selectedHypocenter) return;
-                            setHoverHypocenter(info.object as ProcessedEarthquakeData | null);
-                        }}
+                        onHover={handleHover}
                         onClick={handleMapClick}
-                        getTooltip={({object}) => object && (
-                            `Mag ${object.magnitude} Earthquake\n`+
-                            `- Depth: ${object.depth_km} km`
-                        )}
+                        getTooltip={handleGetTooltip}
                     >
                         <Map
                             mapboxAccessToken={MAPBOX_TOKEN}
@@ -435,16 +445,13 @@ export default function Map3D() {
                         <h3 style={{ margin: 0 }}>Earthquake Details</h3>
                         <button
                             style={closeButtonStyle}
-                            onClick={() => {
-                                setSelectedHypocenter(null);
-                                setHoverHypocenter(null);
-                            }}
+                            onClick={handleCloseDetailsPanel}
                         >&times;</button>
                     </div>
                     <div style={{ marginTop: "1rem" }}>
                         <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
                         <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
-                        <p><strong>Date:</strong> {selectedHypocenter ? parseCustomDateTime(selectedHypocenter.datetime).toLocaleString() : '' }</p>
+                        <p><strong>Date:</strong> {selectedHypocenter ? selectedHypocenter._dateTime.toLocaleString() : '' }</p>
                         <p><strong>Depth:</strong> {selectedHypocenter?.depth_km} km</p>
                         <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
                         <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
@@ -508,7 +515,7 @@ export default function Map3D() {
                                         {quake.location}
                                     </span>
                                     <span style={listItemDateStyle}>
-                                        { parseCustomDateTime(quake.datetime).toLocaleString() }
+                                        { quake._dateTime.toLocaleString() }
                                     </span>
                                 </li>
                             ))}
@@ -533,7 +540,7 @@ export default function Map3D() {
                                         {quake.location}
                                     </span>
                                     <span style={listItemDateStyle}>
-                                        { parseCustomDateTime(quake.datetime).toLocaleString() }
+                                        { quake._dateTime.toLocaleString() }
                                     </span>
                                 </li>
                             ))}
