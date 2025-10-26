@@ -1,10 +1,16 @@
+import { } from "@luma.gl/webgl";
+
 import * as d3 from "d3";
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useEffect, useRef } from "react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { FlyToInterpolator, type MapViewState } from "deck.gl";
-import { CompassWidget, FullscreenWidget, ZoomWidget } from "@deck.gl/widgets"
+import {
+    CompassWidget, 
+    FullscreenWidget, 
+    ZoomWidget 
+} from "@deck.gl/widgets"
 
 import '@deck.gl/widgets/stylesheet.css';
 
@@ -26,6 +32,11 @@ import {
     listItemLocationStyle,
 
 } from "../styles/earthquakePanelStyles";
+import { 
+    loadingOverlayStyle,
+    spinnerStyle,
+    spinnerKeyframes
+} from "../styles/loaderStyles";
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
@@ -34,11 +45,14 @@ const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
 
+
+
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
     
+    const [isLoading, setIsLoading] = useState(true);
     const [activePanel, setActivePanel] = useState<"filter" | "history" | "major-quakes" | null>(null); // TODO add more if needed
     const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
     const animationFrameRef = useRef<number>(0);
@@ -81,8 +95,14 @@ export default function Map3D() {
                 const major10 = majorQuakes.slice(0, 30);
                 setMajorEarthquakes(major10);
             }
-
-        });
+        })
+        .catch(err => {
+            console.error("Failed to fetch earthquake data:", err);
+            alert("Failed to fetch earthquake data. Please reload the site or try again later.");
+        })
+        .finally(() => {
+            setIsLoading(false);
+        })
     }, []);
     // For filters
     useEffect(() => {
@@ -326,6 +346,7 @@ export default function Map3D() {
     });
 
     const widgets = [
+        // new LoadingWidget,
         new ZoomWidget({placement:"top-right"}),
         new CompassWidget({placement:"top-right"}),
         new FullscreenWidget({
@@ -339,6 +360,7 @@ export default function Map3D() {
 
     return (
         <>
+            <style>{spinnerKeyframes}</style>
             <div 
                 ref={fullscreenContainerRef} 
                 style={{ 
@@ -374,6 +396,14 @@ export default function Map3D() {
                     </DeckGL>
                 </div>
 
+                {/* Loading Spinner */}
+                {isLoading && (
+                    <div style={loadingOverlayStyle}>
+                        <div style={spinnerStyle}></div>
+                    </div>
+                )}
+
+                {/* Details Panel */}
                 <div style={{
                     ...panelStyle,
                     transform: selectedHypocenter ? "translateX(0)" : "translateX(-450px)"
