@@ -1,5 +1,3 @@
-import { } from "@luma.gl/webgl";
-
 import * as d3 from "d3";
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
@@ -45,10 +43,14 @@ const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
 
+type ProcessedEarthquakeData = EarthquakeData & {
+    _color: [number, number, number];
+    _dateTime: Date;
+}
 
 export default function Map3D() {
-    const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
-    const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
+    const [hoveredHypocenter, setHoverHypocenter] = useState<ProcessedEarthquakeData | null>(null);
+    const [selectedHypocenter, setSelectedHypocenter] = useState<ProcessedEarthquakeData | null>(null);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
     
     const [isLoading, setIsLoading] = useState(true);
@@ -58,19 +60,30 @@ export default function Map3D() {
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
     // --- STATES FOR FILTERING ---
-    const [data, setData] = useState<EarthquakeData[]>([]);
-    const [filteredData, setFilteredData] = useState<EarthquakeData[]>([]);
+    const [data, setData] = useState<ProcessedEarthquakeData[]>([]);
+    const [filteredData, setFilteredData] = useState<ProcessedEarthquakeData[]>([]);
     const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
     const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([DEFAULT_MIN_MAGNITUDE, 10]);
-    const [recentEarthquakes, setRecentEarthquakes] = useState<EarthquakeData[]>([]);
-    const [majorEarthquakes, setMajorEarthquakes] = useState<EarthquakeData[]>([]);
+    const [recentEarthquakes, setRecentEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
+    const [majorEarthquakes, setMajorEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
 
 
     // Fetch earthquake data
     useEffect(() => {
         d3.json<EarthquakeData[]>(DATA_URL).then(fetchedData => {
             if(fetchedData) {
-                setData(fetchedData);
+                const processedData: ProcessedEarthquakeData[] = fetchedData.map(d => {
+                    const colorString = colorScale(-d.depth_km * 1000);
+                    const color = d3.rgb(colorString);
+
+                    return {
+                        ...d,
+                        _color: [color.r, color.g, color.b],
+                        _dateTime: parseCustomDateTime(d.datetime)
+                    };
+                });
+
+                setData(processedData);
 
                 // for magnitude filters
                 const magnitudes = fetchedData.map(d => d.magnitude);
@@ -393,6 +406,12 @@ export default function Map3D() {
                             mapStyle="style.json"
                             projection="mercator"
                             attributionControl={false}
+
+                            dragPan={false}
+                            dragRotate={false}
+                            scrollZoom={false}
+                            touchZoomRotate={false}
+                            doubleClickZoom={false}
                         >
                     </Map>
                     </DeckGL>
