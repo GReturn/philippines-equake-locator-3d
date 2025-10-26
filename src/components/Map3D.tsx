@@ -406,7 +406,7 @@ export default function Map3D() {
                     <DeckGL
                         viewState={viewState}
                         onViewStateChange={e => setViewState(e.viewState as MapViewState)}
-                        controller
+                        controller={{ touchRotate: true }}
                         layers={layers}
                         widgets={widgets}
                         onHover={handleHover}
