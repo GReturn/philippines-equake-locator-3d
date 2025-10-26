@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { FlyToInterpolator, type MapViewState } from "deck.gl";
 import {
@@ -61,7 +61,6 @@ export default function Map3D() {
 
     // --- STATES FOR FILTERING ---
     const [data, setData] = useState<ProcessedEarthquakeData[]>([]);
-    const [filteredData, setFilteredData] = useState<ProcessedEarthquakeData[]>([]);
     const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
     const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([DEFAULT_MIN_MAGNITUDE, 10]);
     const [recentEarthquakes, setRecentEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
@@ -116,17 +115,20 @@ export default function Map3D() {
             setIsLoading(false);
         })
     }, []);
+    
     // For filters
-    useEffect(() => {
+    const filteredData = useMemo(() => {
         const [minMagnitude, maxMagnitude] = magnitudeRange;
-        const result = data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
-        setFilteredData(result);
+        return data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
+    }, [data, magnitudeRange])
 
-        if(selectedHypocenter && !result.find(d => d.id === selectedHypocenter.id)) {
+    useEffect(() => {
+        if(selectedHypocenter && !filteredData.find(d => d.id === selectedHypocenter.id)) {
             setSelectedHypocenter(null);
             setHoverHypocenter(null);
         }
-    }, [data, magnitudeRange, selectedHypocenter]);
+    }, [filteredData, selectedHypocenter]);
+    
     // Ripple animation effect
     useEffect(() => {
         if(!hoveredHypocenter) {
