@@ -3,8 +3,9 @@ import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
-import { FlyToInterpolator, type MapViewState, type PickingInfo } from "deck.gl";
+import { FlyToInterpolator, MapController, type MapViewState, type PickingInfo } from "deck.gl";
 import {
+    _StatsWidget,
     CompassWidget, 
     FullscreenWidget, 
     ZoomWidget 
@@ -376,13 +377,13 @@ export default function Map3D() {
 
     const fullscreenContainer = fullscreenContainerRef.current;
     const widgets = useMemo(() => [
-        // new LoadingWidget,
         new ZoomWidget({placement:"top-right"}),
         new CompassWidget({placement:"top-right"}),
         new FullscreenWidget({
             placement:"top-right",
             container: fullscreenContainer || undefined
         }),
+        // new _StatsWidget({type: "deck" , framesPerUpdate: 5}),
         customButtonGroup,
         aboutWidget,
         sourceCodeWidget
@@ -406,7 +407,7 @@ export default function Map3D() {
                     <DeckGL
                         viewState={viewState}
                         onViewStateChange={e => setViewState(e.viewState as MapViewState)}
-                        controller={{ touchRotate: true }}
+                        controller={{ type: MapController, touchRotate: true }}
                         layers={layers}
                         widgets={widgets}
                         onHover={handleHover}
@@ -418,12 +419,7 @@ export default function Map3D() {
                             mapStyle="style.json"
                             projection="mercator"
                             attributionControl={false}
-
-                            dragPan={false}
-                            dragRotate={false}
-                            scrollZoom={false}
-                            touchZoomRotate={false}
-                            doubleClickZoom={false}
+                            interactive
                         >
                     </Map>
                     </DeckGL>
