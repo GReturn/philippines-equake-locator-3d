@@ -46,7 +46,6 @@ const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
 
 
-
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<EarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<EarthquakeData | null>(null);
