@@ -229,7 +229,7 @@ export default function Map3D() {
         setActivePanel(prev => prev === "major-quakes" ? null : "major-quakes");
     }, []);
     const handleAboutClick = useCallback(() => {
-        alert('Check historical earthquakes in the Philippine region dating as far back as 2018. Data obtained from PHIVOLCS. Made by Rafael Mendoza.');
+        alert('Check historical earthquakes in the Philippine region dating as far back as 2018. Data obtained from PHIVOLCS. Data is refreshed every day at 10 AM PHT / UTC+8. Made by Rafael Mendoza.');
     }, []);
     const handleSourceCodeClick = useCallback(() => {
         open("https://github.com/GReturn/philippines-equake-locator-3d");
