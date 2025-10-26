@@ -374,9 +374,8 @@ export default function Map3D() {
     const handleMajorQuakesClick = () => {
         setActivePanel(prev => prev === "major-quakes" ? null : "major-quakes");
     }
-    const handleAboutClick = (event: MouseEvent) => {
-        console.log('Button widget was clicked!', event);
-        alert('Check historical earthquake from 2018 to October 2025');
+    const handleAboutClick = () => {
+        alert('Check historical earthquakes in the Philippine region dating as far back as 2018. Data obtained from PHIVOLCS.');
     };
     const handleSourceCodeClick = () => {
         open("https://github.com/GReturn/philippines-equake-locator-3d");
