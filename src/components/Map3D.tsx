@@ -2,8 +2,11 @@ import * as d3 from "d3";
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { LineLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { LineLayer, ScatterplotLayer, type ScatterplotLayerProps } from "@deck.gl/layers";
 import { FlyToInterpolator, MapController, type MapViewState, type PickingInfo } from "deck.gl";
+import { DataFilterExtension } from '@deck.gl/extensions'
+import { load } from '@loaders.gl/core'
+import { FlatGeobufLoader } from '@loaders.gl/flatgeobuf'
 import {
     _StatsWidget,
     CompassWidget, 
@@ -20,8 +23,8 @@ import { MasterPanel } from "./MasterPanel"
 import "./widgets/widgets.css";
 
 import { parseCustomDateTime } from "../utils/datetime-parser";
-import { type EarthquakeData } from "../types/earthquake";
 import { type ProcessedEarthquakeData } from "../types/processed-earthquake";
+import { type FGBFeature } from "../types/fgb";
 import { INITIAL_VIEW_STATE } from "../constants/map";
 import { 
     panelStyle, 
@@ -40,11 +43,16 @@ import {
 
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
-const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-data-scraper/refs/heads/main/data/earthquakes.json";
+
+const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-data-scraper/refs/heads/main/data/earthquakes.fgb";
 
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
 
+
+interface FGBLoaderResult {
+    features: FGBFeature[];
+}
 
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<ProcessedEarthquakeData | null>(null);
@@ -57,76 +65,74 @@ export default function Map3D() {
     const animationFrameRef = useRef<number>(0);
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
-    // --- STATES FOR FILTERING ---
+    // Filtering states
     const [data, setData] = useState<ProcessedEarthquakeData[]>([]);
     const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
+    
     const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([DEFAULT_MIN_MAGNITUDE, 10]);
     const [recentEarthquakes, setRecentEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
     const [majorEarthquakes, setMajorEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
 
-
-    // Fetch earthquake data
     useEffect(() => {
-        d3.json<EarthquakeData[]>(DATA_URL).then(fetchedData => {
-            if(fetchedData) {
-                const processedData: ProcessedEarthquakeData[] = fetchedData.map(d => {
-                    const colorString = colorScale(-d.depth_km * 1000);
+        const loadData = async () => {
+            try {
+                const response = (await load(DATA_URL, FlatGeobufLoader)) as unknown as FGBLoaderResult;
+                const features = response.features;
+
+                const processedData: ProcessedEarthquakeData[] = features.map((f: FGBFeature) => {
+                    const [lon, lat, depth] = f.geometry.coordinates;
+                    const props = f.properties;
+
+                    const depthKm = props.depth_km || depth || 0; 
+                    
+                    const colorString = colorScale(-depthKm * 1000);
                     const color = d3.rgb(colorString);
 
                     return {
-                        ...d,
+                        ...props,
+                        id: props.id, 
+                        magnitude: props.magnitude,
+                        location: props.location,
+                        datetime: props.datetime,
+                        longitude: lon,
+                        latitude: lat,
+                        depth_km: depthKm,
                         _color: [color.r, color.g, color.b],
-                        _dateTime: parseCustomDateTime(d.datetime)
+                        _dateTime: parseCustomDateTime(props.datetime)
                     };
                 });
 
                 setData(processedData);
 
-                // for magnitude filters
+                // Custom Filters
                 const magnitudes = processedData.map(d => d.magnitude);
-                const minMagitude = Math.floor(Math.min(...magnitudes) * 10) / 10;
-                const maxMagitude = Math.floor(Math.max(...magnitudes) * 10) / 10;
+                const minMag = Math.floor(Math.min(...magnitudes) * 10) / 10;
+                const maxMag = Math.floor(Math.max(...magnitudes) * 10) / 10;
                 
-                setDataMinMaxMag([minMagitude, maxMagitude]);
-                setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMagitude), maxMagitude]);
+                setDataMinMaxMag([minMag, maxMag]);
+                setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMag), maxMag]);
                 
-                // for recent quakes
+                // Recent Quakes
                 const sortedData = [...processedData].sort((a, b) => 
-                    parseCustomDateTime(b.datetime).getTime() - parseCustomDateTime(a.datetime).getTime()
+                    b._dateTime.getTime() - a._dateTime.getTime()
                 );
-                const recent100 = sortedData.slice(0,100);
-                setRecentEarthquakes(recent100);
+                setRecentEarthquakes(sortedData.slice(0,100));
 
-                // for major quakes
-                const majorQuakes = [...processedData].sort((a, b) =>
-                    b.magnitude - a.magnitude
-                );
-                const major10 = majorQuakes.slice(0, 30);
-                setMajorEarthquakes(major10);
+                // Major Quakes
+                const majorQuakes = [...processedData].sort((a, b) => b.magnitude - a.magnitude);
+                setMajorEarthquakes(majorQuakes.slice(0, 30));
+
+            } catch (err) {
+                console.error("Failed to load data:", err);
+                alert("Failed to load earthquake data.");
+            } finally {
+                setIsLoading(false);
             }
-        })
-        .catch(err => {
-            console.error("Failed to fetch earthquake data:", err);
-            alert("Failed to fetch earthquake data. Please reload the site or try again later.");
-        })
-        .finally(() => {
-            setIsLoading(false);
-        })
-    }, []);
-    
-    // For filters
-    const filteredData = useMemo(() => {
-        const [minMagnitude, maxMagnitude] = magnitudeRange;
-        return data.filter(d => d.magnitude >= minMagnitude && d.magnitude <= maxMagnitude);
-    }, [data, magnitudeRange])
+        };
 
-    useEffect(() => {
-        if(selectedHypocenter && !filteredData.find(d => d.id === selectedHypocenter.id)) {
-            setSelectedHypocenter(null);
-            setHoverHypocenter(null);
-        }
-    }, [filteredData, selectedHypocenter]);
-    
+        loadData();
+    }, []);
+
     // Ripple animation effect
     useEffect(() => {
         if(!hoveredHypocenter) {
@@ -254,22 +260,41 @@ export default function Map3D() {
         return hoveredHypocenter ? [hoveredHypocenter] : [];
     }, [hoveredHypocenter]);
 
-    // Scatterplot layer for earthquakes
-    const scatterLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
-        id: "earthquakes",
-        data: filteredData,
-        radiusUnits: "meters",
-        
-        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
-        getRadius: d => Math.pow(2, d.magnitude) * 100,
-        getFillColor: d => d._color,
+    // for the scatterplot
+    type ExtendedProps = ScatterplotLayerProps<ProcessedEarthquakeData> & {
+        getFilterValue: (d: ProcessedEarthquakeData) => number;
+        filterRange: [number, number];
+    };
 
-        radiusMinPixels: 2,
-        
-        pickable: true,
-        autoHighlight: true,
-        billboard: true,
-    }), [filteredData]);
+    const scatterLayer = useMemo(() => {
+        const layerProps: ExtendedProps = {
+            id: "earthquakes",
+            data: data,
+            
+            extensions: [new DataFilterExtension({filterSize: 1})], 
+
+            getFilterValue: (d: ProcessedEarthquakeData) => d.magnitude, 
+            filterRange: magnitudeRange,
+
+            radiusUnits: "meters",
+            getPosition: (d: ProcessedEarthquakeData) => [d.longitude, d.latitude, -d.depth_km * 1000],
+            getRadius: (d: ProcessedEarthquakeData) => Math.pow(2, d.magnitude) * 100,
+            getFillColor: (d: ProcessedEarthquakeData) => d._color,
+            
+            radiusMinPixels: 2,
+            // lineWidthMaxPixels: 0,
+            stroked: false,
+            pickable: true,
+            autoHighlight: true,
+            billboard: true,
+
+            updateTriggers: {
+                getFilterValue: [magnitudeRange]
+            }
+        };
+
+        return new ScatterplotLayer(layerProps);
+    }, [data, magnitudeRange]);
 
     // Line layer for depth lines
     const lineLayer = useMemo(() => new LineLayer<ProcessedEarthquakeData>({
@@ -283,6 +308,7 @@ export default function Map3D() {
         
         pickable: false,
     }), [hoveredData]);
+
     // Ripple effect layer
     const rippleLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
         id: "epicenter-ripple",
@@ -303,6 +329,7 @@ export default function Map3D() {
             getFillColor: [rippleAnimation.opacity]
         }
     }), [hoveredData, rippleAnimation]);
+
     // Epicenter circle layer
     const epicenterCircleLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
         id: "epicenter-circle",
@@ -383,7 +410,7 @@ export default function Map3D() {
             placement:"top-right",
             container: fullscreenContainer || undefined
         }),
-        // new _StatsWidget({type: "deck" , framesPerUpdate: 5}),
+        new _StatsWidget({type: "deck" , framesPerUpdate: 5}),
         customButtonGroup,
         aboutWidget,
         sourceCodeWidget

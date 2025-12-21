@@ -7,13 +7,13 @@
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@loaders.gl/flatgeobuf": "^4.3.4",
     "@types/papaparse": "^5.3.16",
     "d3": "^7.9.0",
     "deck.gl": "^9.2.2",
