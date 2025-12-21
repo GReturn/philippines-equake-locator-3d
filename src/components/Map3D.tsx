@@ -44,7 +44,7 @@ import {
 const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
 
-const DATA_URL = "https://raw.githubusercontent.com/GReturn/phivolcs-earthquake-data-scraper/refs/heads/main/data/earthquakes.fgb";
+const DATA_URL = "https://greturn.github.io/phivolcs-earthquake-data-scraper/data/earthquakes.fgb";
 
 const colorScale = d3.scaleSequential([0, -500000], d3.interpolateSpectral)
 const DEFAULT_MIN_MAGNITUDE = 4.3;
