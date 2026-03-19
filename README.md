@@ -37,12 +37,24 @@ If you wish to run this project locally:
     npm install
     ```
 
-4.  **Start:**
+4.  **Set up environment variables:**
+    ```bash
+    cp .env.example .env
+    ```
+    Then fill in your [Mapbox access token](https://account.mapbox.com/access-tokens/) in the `.env` file.
+
+5.  **Start:**
     ```bash
     npm run dev
     ```
 
-5.  Open [http://localhost:3000](http://localhost:3000) (or your project's local port) in your browser.
+6.  Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+## 🧪 Testing
+
+This project currently has no automated test suite. Verification is done manually by running the dev server and checking that the map loads, earthquake data renders, and all UI panels (filter, history, major quakes, details) function correctly.
 
 ---
 
