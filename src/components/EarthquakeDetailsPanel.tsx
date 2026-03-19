@@ -8,9 +8,10 @@ import {
 interface EarthquakeDetailsPanelProps {
     earthquake: ProcessedEarthquakeData | null;
     onClose: () => void;
+    hasIntensityData?: boolean;
 }
 
-export function EarthquakeDetailsPanel({ earthquake, onClose }: EarthquakeDetailsPanelProps) {
+export function EarthquakeDetailsPanel({ earthquake, onClose, hasIntensityData = false }: EarthquakeDetailsPanelProps) {
     return (
         <div style={{
             ...panelStyle,
@@ -32,6 +33,20 @@ export function EarthquakeDetailsPanel({ earthquake, onClose }: EarthquakeDetail
                 <p><strong>Latitude:</strong> {earthquake?.latitude}</p>
                 <p><strong>Longitude:</strong> {earthquake?.longitude}</p>
                 <p><strong>ID:</strong> {earthquake?.id}</p>
+
+                {hasIntensityData && (
+                    <div style={{ 
+                        marginTop: "1.5rem", 
+                        borderTop: "1px solid #444", 
+                        paddingTop: "0.5rem", 
+                        fontSize: "0.75rem", 
+                        color: "#aaa", 
+                        fontStyle: "italic",
+                        lineHeight: "1.2"
+                    }}>
+                        * Intensity overlay shows recorded PHIVOLCS reports for this specific earthquake.
+                    </div>
+                )}
             </div>
         </div>
     );

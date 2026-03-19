@@ -1,7 +1,7 @@
 import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useRef, useMemo, useCallback } from "react";
-import { LineLayer, ScatterplotLayer, type ScatterplotLayerProps } from "@deck.gl/layers";
+import { LineLayer, ScatterplotLayer, TextLayer, type ScatterplotLayerProps } from "@deck.gl/layers";
 import { MapController, type MapViewState, type PickingInfo } from "@deck.gl/core";
 import { DataFilterExtension } from '@deck.gl/extensions'
 import {
@@ -25,6 +25,7 @@ import "../styles/loader.css";
 import { useEarthquakeData } from "../hooks/useEarthquakeData";
 import { useRippleAnimation } from "../hooks/useRippleAnimation";
 import { useMapNavigation } from "../hooks/useMapNavigation";
+import { useIntensityReports } from "../hooks/useIntensityReports";
 import { type ProcessedEarthquakeData } from "../types/processed-earthquake";
 import {
     loadingOverlayStyle,
@@ -42,6 +43,20 @@ type ExtendedProps = ScatterplotLayerProps<ProcessedEarthquakeData> & {
     filterRange: [number, number];
 };
 
+// PEIS intensity colors (I–X)
+const PEIS_COLORS: { [key: number]: [number, number, number] } = {
+    10: [139, 0, 0],
+    9:  [178, 34, 34],
+    8:  [220, 20, 60],
+    7:  [255, 69, 0],
+    6:  [255, 140, 0],
+    5:  [255, 200, 0],
+    4:  [255, 235, 59],
+    3:  [144, 238, 144],
+    2:  [100, 200, 100],
+    1:  [60, 160, 60],
+};
+
 export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<ProcessedEarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<ProcessedEarthquakeData | null>(null);
@@ -57,6 +72,8 @@ export default function Map3D() {
 
     const { viewState, setViewState, flyToEarthquake } = useMapNavigation();
     const rippleAnimation = useRippleAnimation(!!hoveredHypocenter);
+    const intensityLocations = useIntensityReports(selectedHypocenter);
+    const hasIntensityData = intensityLocations.length > 0; // used to show a disclaimer in the details panel
 
     // --- Event handlers ---
     const handleMapClick = useCallback(({ object }: { object?: ProcessedEarthquakeData }) => {
@@ -202,27 +219,57 @@ export default function Map3D() {
         id: "selected-point",
         data: selectedData,
         radiusUnits: "meters",
-        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000], // Maintain depth
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getRadius: d => Math.pow(2, d.magnitude) * 100,
         getFillColor: d => d._color,
         radiusMinPixels: 2,
         stroked: true,
-        getLineColor: [255, 255, 255, 255], // White border to highlight
+        getLineColor: [255, 255, 255, 255],
         getLineWidth: 2,
         lineWidthUnits: "pixels",
         pickable: false,
         billboard: true,
-        parameters: { depthTest: false } as any // Bypasses depth buffer to render topmost
+        parameters: { depthTest: false } as any
     }), [selectedData]);
 
-    // Draw static circle LAST so it's on top when ripple is animating
+    const intensityBubblesLayer = useMemo(() => new ScatterplotLayer<any>({
+        id: "intensity-bubbles",
+        data: intensityLocations,
+        radiusUnits: "pixels",
+        getRadius: 10,
+        getPosition: d => [d.longitude, d.latitude, 10],
+        getFillColor: d => PEIS_COLORS[d.intensity] ?? [200, 200, 200],
+        stroked: true,
+        getLineColor: [255, 255, 255, 220],
+        getLineWidth: 1.5,
+        lineWidthUnits: "pixels",
+        pickable: false,
+        billboard: true,
+        parameters: { depthTest: false } as any
+    }), [intensityLocations]);
+
+    const intensityTextLayer = useMemo(() => new TextLayer<any>({
+        id: "intensity-text",
+        data: intensityLocations,
+        getPosition: d => [d.longitude, d.latitude, 20],
+        getText: d => String(d.intensity),
+        getSize: 11,
+        getColor: [255, 255, 255, 255],
+        fontWeight: 'bold',
+        getAlignmentBaseline: 'center',
+        getTextAnchor: 'middle',
+        parameters: { depthTest: false } as any
+    }), [intensityLocations]);
+
     const layers = useMemo(() => [
         scatterLayer,
         rippleLayer,
         selectedPointLayer,
         lineLayer,
         epicenterCircleLayer,
-    ], [scatterLayer, rippleLayer, selectedPointLayer, lineLayer, epicenterCircleLayer]);
+        intensityBubblesLayer,
+        intensityTextLayer,
+    ], [scatterLayer, rippleLayer, selectedPointLayer, lineLayer, epicenterCircleLayer, intensityBubblesLayer, intensityTextLayer]);
 
     // --- Widgets ---
     const sourceCodeWidget = useMemo(() => new CustomIconWidget({
@@ -322,6 +369,7 @@ export default function Map3D() {
             <EarthquakeDetailsPanel
                 earthquake={selectedHypocenter}
                 onClose={handleCloseDetailsPanel}
+                hasIntensityData={hasIntensityData}
             />
 
             {/* Filter Panel */}
