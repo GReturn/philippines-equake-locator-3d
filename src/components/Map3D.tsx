@@ -9,9 +9,9 @@ import { load } from '@loaders.gl/core'
 import { FlatGeobufLoader } from '@loaders.gl/flatgeobuf'
 import {
     _StatsWidget,
-    CompassWidget, 
-    FullscreenWidget, 
-    ZoomWidget 
+    CompassWidget,
+    FullscreenWidget,
+    ZoomWidget
 } from "@deck.gl/widgets"
 
 import '@deck.gl/widgets/stylesheet.css';
@@ -26,23 +26,22 @@ import { parseCustomDateTime } from "../utils/datetime-parser";
 import { type ProcessedEarthquakeData } from "../types/processed-earthquake";
 import { type FGBFeature } from "../types/fgb";
 import { INITIAL_VIEW_STATE } from "../constants/map";
-import { 
-    panelStyle, 
+import {
+    panelStyle,
     panelHeaderStyle,
-    closeButtonStyle, 
-    listItemStyle, 
-    listItemDateStyle, 
+    closeButtonStyle,
+    listItemStyle,
+    listItemDateStyle,
     listItemLocationStyle,
 
 } from "../styles/earthquakePanelStyles";
-import { 
+import {
     loadingOverlayStyle,
     spinnerStyle,
     spinnerKeyframes
 } from "../styles/loaderStyles";
 
-const PUBLIC_MAPBOX_TOKEN = "pk.eyJ1IjoibGluZHJldyIsImEiOiJjbWg0aGk4emcxajMzcmtzYmxrOGJoN2RmIn0.7iXHqgy1RiWVjzcvKyN-Zg";
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || PUBLIC_MAPBOX_TOKEN;
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const DATA_URL = "https://greturn.github.io/phivolcs-earthquake-data-scraper/data/earthquakes.fgb";
 
@@ -58,17 +57,17 @@ export default function Map3D() {
     const [hoveredHypocenter, setHoverHypocenter] = useState<ProcessedEarthquakeData | null>(null);
     const [selectedHypocenter, setSelectedHypocenter] = useState<ProcessedEarthquakeData | null>(null);
     const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE);
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [activePanel, setActivePanel] = useState<"filter" | "history" | "major-quakes" | null>(null); // TODO add more if needed
-    const [rippleAnimation, setRippleAnimation] = useState({scale: 0, opacity: 0});
+    const [rippleAnimation, setRippleAnimation] = useState({ scale: 0, opacity: 0 });
     const animationFrameRef = useRef<number>(0);
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
 
     // Filtering states
     const [data, setData] = useState<ProcessedEarthquakeData[]>([]);
     const [dataMinMaxMag, setDataMinMaxMag] = useState<[number, number]>([0, 10]);
-    
+
     const [magnitudeRange, setMagnitudeRange] = useState<[number, number]>([DEFAULT_MIN_MAGNITUDE, 10]);
     const [recentEarthquakes, setRecentEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
     const [majorEarthquakes, setMajorEarthquakes] = useState<ProcessedEarthquakeData[]>([]);
@@ -83,14 +82,14 @@ export default function Map3D() {
                     const [lon, lat, depth] = f.geometry.coordinates;
                     const props = f.properties;
 
-                    const depthKm = props.depth_km || depth || 0; 
-                    
+                    const depthKm = props.depth_km || depth || 0;
+
                     const colorString = colorScale(-depthKm * 1000);
                     const color = d3.rgb(colorString);
 
                     return {
                         ...props,
-                        id: props.id, 
+                        id: props.id,
                         magnitude: props.magnitude,
                         location: props.location,
                         datetime: props.datetime,
@@ -108,15 +107,15 @@ export default function Map3D() {
                 const magnitudes = processedData.map(d => d.magnitude);
                 const minMag = Math.floor(Math.min(...magnitudes) * 10) / 10;
                 const maxMag = Math.floor(Math.max(...magnitudes) * 10) / 10;
-                
+
                 setDataMinMaxMag([minMag, maxMag]);
                 setMagnitudeRange([Math.min(DEFAULT_MIN_MAGNITUDE, maxMag), maxMag]);
-                
+
                 // Recent Quakes
-                const sortedData = [...processedData].sort((a, b) => 
+                const sortedData = [...processedData].sort((a, b) =>
                     b._dateTime.getTime() - a._dateTime.getTime()
                 );
-                setRecentEarthquakes(sortedData.slice(0,100));
+                setRecentEarthquakes(sortedData.slice(0, 100));
 
                 // Major Quakes
                 const majorQuakes = [...processedData].sort((a, b) => b.magnitude - a.magnitude);
@@ -135,9 +134,9 @@ export default function Map3D() {
 
     // Ripple animation effect
     useEffect(() => {
-        if(!hoveredHypocenter) {
-            if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-            setRippleAnimation({scale: 0, opacity: 0});
+        if (!hoveredHypocenter) {
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            setRippleAnimation({ scale: 0, opacity: 0 });
             return;
         }
         let startTime: number | null = null;
@@ -145,7 +144,7 @@ export default function Map3D() {
         const maxScale = 50000;
 
         const animateRipple = (currentTime: DOMHighResTimeStamp) => {
-            if(!startTime) startTime = currentTime;
+            if (!startTime) startTime = currentTime;
             const elapsed = currentTime - startTime;
             const progress = (elapsed % animationDuration) / animationDuration;
             setRippleAnimation({
@@ -157,10 +156,10 @@ export default function Map3D() {
 
         animationFrameRef.current = requestAnimationFrame(animateRipple);
         return () => {
-            if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
     }, [hoveredHypocenter]);
-    
+
     const flyToEarthquake = useCallback((equake: ProcessedEarthquakeData) => {
         const pitch = 60;
         const pitchRadians = (pitch * Math.PI) / 180;
@@ -185,8 +184,8 @@ export default function Map3D() {
             transitionDuration: 2000
         }))
     }, []);
-    const handleMapClick = useCallback(({ object }: { object?: ProcessedEarthquakeData}) => {
-        if(object) {
+    const handleMapClick = useCallback(({ object }: { object?: ProcessedEarthquakeData }) => {
+        if (object) {
             setSelectedHypocenter(object);
             setHoverHypocenter(object);
             setActivePanel(null);
@@ -201,16 +200,16 @@ export default function Map3D() {
         let [min, max] = magnitudeRange;
         let rangeChanged = false;
 
-        if(quake.magnitude < min) {
+        if (quake.magnitude < min) {
             min = quake.magnitude;
             rangeChanged = true;
         }
-        if(quake.magnitude > max) {
+        if (quake.magnitude > max) {
             max = quake.magnitude;
             rangeChanged = true;
         }
 
-        if(rangeChanged) setMagnitudeRange([min, max]);
+        if (rangeChanged) setMagnitudeRange([min, max]);
 
         flyToEarthquake(quake);
         setSelectedHypocenter(quake);
@@ -224,7 +223,7 @@ export default function Map3D() {
     }, []);
     const handleMaxMagChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newMax = +e.target.value;
-        setMagnitudeRange(([oldMin, ]) => [Math.min(oldMin, newMax), newMax]);
+        setMagnitudeRange(([oldMin,]) => [Math.min(oldMin, newMax), newMax]);
     }, []);
     const handleHistoryClick = useCallback(() => {
         setActivePanel(prev => prev === "history" ? null : "history");
@@ -242,13 +241,13 @@ export default function Map3D() {
         open("https://github.com/GReturn/philippines-equake-locator-3d");
     }, []);
     const handleHover = useCallback((info: { object?: ProcessedEarthquakeData | null }) => {
-        if(selectedHypocenter) return;
+        if (selectedHypocenter) return;
         setHoverHypocenter(info.object || null);
     }, [selectedHypocenter]);
-    const handleGetTooltip = useCallback(({object}: PickingInfo) => { 
+    const handleGetTooltip = useCallback(({ object }: PickingInfo) => {
         const data = object as ProcessedEarthquakeData | null;
 
-        if(data) return  `Mag ${object.magnitude} Earthquake\n- Depth: ${object.depth_km} km`
+        if (data) return `Mag ${object.magnitude} Earthquake\n- Depth: ${object.depth_km} km`
         return null;
     }, []);
     const handleCloseDetailsPanel = useCallback(() => {
@@ -270,17 +269,17 @@ export default function Map3D() {
         const layerProps: ExtendedProps = {
             id: "earthquakes",
             data: data,
-            
-            extensions: [new DataFilterExtension({filterSize: 1})], 
 
-            getFilterValue: (d: ProcessedEarthquakeData) => d.magnitude, 
+            extensions: [new DataFilterExtension({ filterSize: 1 })],
+
+            getFilterValue: (d: ProcessedEarthquakeData) => d.magnitude,
             filterRange: magnitudeRange,
 
             radiusUnits: "meters",
             getPosition: (d: ProcessedEarthquakeData) => [d.longitude, d.latitude, -d.depth_km * 1000],
             getRadius: (d: ProcessedEarthquakeData) => Math.pow(2, d.magnitude) * 100,
             getFillColor: (d: ProcessedEarthquakeData) => d._color,
-            
+
             radiusMinPixels: 2,
             // lineWidthMaxPixels: 0,
             stroked: false,
@@ -300,12 +299,12 @@ export default function Map3D() {
     const lineLayer = useMemo(() => new LineLayer<ProcessedEarthquakeData>({
         id: "depth-lines",
         data: hoveredData,
-        
+
         getSourcePosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getTargetPosition: d => [d.longitude, d.latitude, 0],
         getColor: [255, 255, 255],
         getWidth: 2,
-        
+
         pickable: false,
     }), [hoveredData]);
 
@@ -314,11 +313,11 @@ export default function Map3D() {
         id: "epicenter-ripple",
         data: hoveredData,
         radiusUnits: "meters",
-        
+
         getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000],
         getRadius: () => rippleAnimation.scale,
         getFillColor: [255, 255, 255, Math.floor(rippleAnimation.opacity * 128)],
-        
+
         radiusMinPixels: 0,
         radiusMaxPixels: 50000,
         pickable: false,
@@ -340,11 +339,11 @@ export default function Map3D() {
         getPosition: d => [d.longitude, d.latitude, 1],
         getRadius: 500,
         getFillColor: [255, 255, 255, 128],
-        getLineColor: [0, 0, 0, 255],        
+        getLineColor: [0, 0, 0, 255],
         getLineWidth: 2,
-        
+
         radiusMinPixels: 4,
-        
+
         pickable: false,
         billboard: true,
 
@@ -353,7 +352,7 @@ export default function Map3D() {
     const layers = useMemo(() => [
         scatterLayer,
         lineLayer,
-        rippleLayer, 
+        rippleLayer,
         epicenterCircleLayer,  // There is a visual anomaly when ripple is animating. By drawing static circle LAST, it's on top, this fixes the issue for the larger magnitude earthquakes :P
     ], [scatterLayer, lineLayer, rippleLayer, epicenterCircleLayer]);
 
@@ -373,27 +372,27 @@ export default function Map3D() {
         iconName: 'info',
         iconClassName: 'deck-widget-icon-button my-custom-widget-button'
     }), [handleAboutClick]);
-    const customButtons: ButtonDefinition[] = useMemo(() => 
-    [
-        {
-            id: 'filter-widget',
-            title: 'Add Filters',
-            iconName: 'filter_list',
-            onClick: handleFilterClick
-        },
-        {
-            id: 'history-widget',
-            title: 'Recent 100 Earthquakes',
-            iconName: 'list',
-            onClick: handleHistoryClick
-        },
-        {
-            id: 'major-quakes-widget',
-            title: '30 Major Earthquakes',
-            iconName: 'earthquake',
-            onClick: handleMajorQuakesClick
-        }
-    ], [handleFilterClick, handleHistoryClick, handleMajorQuakesClick]);
+    const customButtons: ButtonDefinition[] = useMemo(() =>
+        [
+            {
+                id: 'filter-widget',
+                title: 'Add Filters',
+                iconName: 'filter_list',
+                onClick: handleFilterClick
+            },
+            {
+                id: 'history-widget',
+                title: 'Recent 100 Earthquakes',
+                iconName: 'list',
+                onClick: handleHistoryClick
+            },
+            {
+                id: 'major-quakes-widget',
+                title: '30 Major Earthquakes',
+                iconName: 'earthquake',
+                onClick: handleMajorQuakesClick
+            }
+        ], [handleFilterClick, handleHistoryClick, handleMajorQuakesClick]);
     const customButtonGroup = useMemo(() => new IconButtonGroupWidget({
         id: 'my-tools-widget',
         placement: 'top-right',
@@ -404,13 +403,13 @@ export default function Map3D() {
 
     const fullscreenContainer = fullscreenContainerRef.current;
     const widgets = useMemo(() => [
-        new ZoomWidget({placement:"top-right"}),
-        new CompassWidget({placement:"top-right"}),
+        new ZoomWidget({ placement: "top-right" }),
+        new CompassWidget({ placement: "top-right" }),
         new FullscreenWidget({
-            placement:"top-right",
+            placement: "top-right",
             container: fullscreenContainer || undefined
         }),
-        new _StatsWidget({type: "deck" , framesPerUpdate: 5}),
+        new _StatsWidget({ type: "deck", framesPerUpdate: 5 }),
         customButtonGroup,
         aboutWidget,
         sourceCodeWidget
@@ -419,15 +418,15 @@ export default function Map3D() {
     return (
         <>
             <style>{spinnerKeyframes}</style>
-            <div 
-                ref={fullscreenContainerRef} 
-                style={{ 
-                    position: 'relative', 
-                    width: '100vw', 
+            <div
+                ref={fullscreenContainerRef}
+                style={{
+                    position: 'relative',
+                    width: '100vw',
                     height: '100vh',
                 }}
             >
-                <div 
+                <div
                     style={{ position: 'relative', width: '100vw', height: '100vh' }}
                     onContextMenu={(e) => e.preventDefault()}
                 >
@@ -448,7 +447,7 @@ export default function Map3D() {
                             attributionControl={false}
                             interactive
                         >
-                    </Map>
+                        </Map>
                     </DeckGL>
                 </div>
 
@@ -474,7 +473,7 @@ export default function Map3D() {
                     <div style={{ marginTop: "1rem" }}>
                         <p><strong>Magnitude:</strong> {selectedHypocenter?.magnitude}</p>
                         <p><strong>Location:</strong> {selectedHypocenter?.location}</p>
-                        <p><strong>Date:</strong> {selectedHypocenter ? selectedHypocenter._dateTime.toLocaleString() : '' }</p>
+                        <p><strong>Date:</strong> {selectedHypocenter ? selectedHypocenter._dateTime.toLocaleString() : ''}</p>
                         <p><strong>Depth:</strong> {selectedHypocenter?.depth_km} km</p>
                         <p><strong>Latitude:</strong> {selectedHypocenter?.latitude}</p>
                         <p><strong>Longitude:</strong> {selectedHypocenter?.longitude}</p>
@@ -501,7 +500,7 @@ export default function Map3D() {
                                 style={{ width: '100%' }}
                             />
                         </div>
-                        
+
                         {/* Max Magnitude Slider */}
                         <div>
                             <label htmlFor="maxMag" style={{ display: 'block', marginBottom: '5px' }}>
@@ -526,8 +525,8 @@ export default function Map3D() {
                     <MasterPanel title="Recent 100 Earthquakes" onClose={() => setActivePanel(null)}>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                             {recentEarthquakes.map(quake => (
-                                <li 
-                                    key={quake.id} 
+                                <li
+                                    key={quake.id}
                                     onClick={() => handleRecentEarthquakeClick(quake)}
                                     style={listItemStyle}
                                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#333')}
@@ -538,7 +537,7 @@ export default function Map3D() {
                                         {quake.location}
                                     </span>
                                     <span style={listItemDateStyle}>
-                                        { quake._dateTime.toLocaleString() }
+                                        {quake._dateTime.toLocaleString()}
                                     </span>
                                 </li>
                             ))}
@@ -551,8 +550,8 @@ export default function Map3D() {
                     <MasterPanel title="30 Major Earthquakes" onClose={() => setActivePanel(null)}>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                             {majorEarthquakes.map(quake => (
-                                <li 
-                                    key={quake.id} 
+                                <li
+                                    key={quake.id}
                                     onClick={() => handleRecentEarthquakeClick(quake)}
                                     style={listItemStyle}
                                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#333')}
@@ -563,7 +562,7 @@ export default function Map3D() {
                                         {quake.location}
                                     </span>
                                     <span style={listItemDateStyle}>
-                                        { quake._dateTime.toLocaleString() }
+                                        {quake._dateTime.toLocaleString()}
                                     </span>
                                 </li>
                             ))}
