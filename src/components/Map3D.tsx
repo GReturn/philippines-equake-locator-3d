@@ -8,7 +8,7 @@ import { DataFilterExtension } from '@deck.gl/extensions'
 import { load } from '@loaders.gl/core'
 import { FlatGeobufLoader } from '@loaders.gl/flatgeobuf'
 import {
-    _StatsWidget,
+    // _StatsWidget,
     CompassWidget,
     FullscreenWidget,
     ZoomWidget
@@ -409,7 +409,7 @@ export default function Map3D() {
             placement: "top-right",
             container: fullscreenContainer || undefined
         }),
-        new _StatsWidget({ type: "deck", framesPerUpdate: 5 }),
+        // new _StatsWidget({ type: "deck", framesPerUpdate: 5 }),
         customButtonGroup,
         aboutWidget,
         sourceCodeWidget
