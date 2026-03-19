@@ -292,7 +292,7 @@ export default function Map3D() {
                 >
                     <Map
                         mapboxAccessToken={MAPBOX_TOKEN}
-                        mapStyle="style.json"
+                        mapStyle={`${import.meta.env.BASE_URL}style.json`}
                         projection="mercator"
                         attributionControl={false}
                         interactive

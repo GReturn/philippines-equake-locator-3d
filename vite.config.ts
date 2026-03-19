@@ -15,8 +15,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           mapbox: ['mapbox-gl'],
-          vendor: ['react', 'react-dom'], 
-          visualization: ['deck.gl', '@deck.gl/core', '@deck.gl/layers', '@loaders.gl/core'],
+          vendor: ['react', 'react-dom'],
+          visualization: ['@deck.gl/core', '@deck.gl/layers', '@loaders.gl/core', '@deck.gl/react', '@deck.gl/widgets'],
         }
       }
     }
