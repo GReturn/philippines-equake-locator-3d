@@ -128,6 +128,10 @@ export default function Map3D() {
         return hoveredHypocenter ? [hoveredHypocenter] : [];
     }, [hoveredHypocenter]);
 
+    const selectedData = useMemo(() => {
+        return selectedHypocenter ? [selectedHypocenter] : [];
+    }, [selectedHypocenter]);
+
     const scatterLayer = useMemo(() => {
         const layerProps: ExtendedProps = {
             id: "earthquakes",
@@ -175,7 +179,8 @@ export default function Map3D() {
         updateTriggers: {
             getRadius: [rippleAnimation.scale],
             getFillColor: [rippleAnimation.opacity]
-        }
+        },
+        parameters: { depthTest: false } as any
     }), [hoveredData, rippleAnimation]);
 
     const epicenterCircleLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
@@ -193,13 +198,31 @@ export default function Map3D() {
         billboard: true,
     }), [hoveredData]);
 
+    const selectedPointLayer = useMemo(() => new ScatterplotLayer<ProcessedEarthquakeData>({
+        id: "selected-point",
+        data: selectedData,
+        radiusUnits: "meters",
+        getPosition: d => [d.longitude, d.latitude, -d.depth_km * 1000], // Maintain depth
+        getRadius: d => Math.pow(2, d.magnitude) * 100,
+        getFillColor: d => d._color,
+        radiusMinPixels: 2,
+        stroked: true,
+        getLineColor: [255, 255, 255, 255], // White border to highlight
+        getLineWidth: 2,
+        lineWidthUnits: "pixels",
+        pickable: false,
+        billboard: true,
+        parameters: { depthTest: false } as any // Bypasses depth buffer to render topmost
+    }), [selectedData]);
+
     // Draw static circle LAST so it's on top when ripple is animating
     const layers = useMemo(() => [
         scatterLayer,
-        lineLayer,
         rippleLayer,
+        selectedPointLayer,
+        lineLayer,
         epicenterCircleLayer,
-    ], [scatterLayer, lineLayer, rippleLayer, epicenterCircleLayer]);
+    ], [scatterLayer, rippleLayer, selectedPointLayer, lineLayer, epicenterCircleLayer]);
 
     // --- Widgets ---
     const sourceCodeWidget = useMemo(() => new CustomIconWidget({
