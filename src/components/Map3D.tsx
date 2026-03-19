@@ -2,7 +2,7 @@ import DeckGL from "@deck.gl/react";
 import { Map } from "react-map-gl/mapbox";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { LineLayer, ScatterplotLayer, type ScatterplotLayerProps } from "@deck.gl/layers";
-import { MapController, type MapViewState, type PickingInfo } from "deck.gl";
+import { MapController, type MapViewState, type PickingInfo } from "@deck.gl/core";
 import { DataFilterExtension } from '@deck.gl/extensions'
 import {
     CompassWidget,
@@ -282,7 +282,7 @@ export default function Map3D() {
             >
                 <DeckGL
                     viewState={viewState}
-                    onViewStateChange={e => setViewState(e.viewState as MapViewState)}
+                    onViewStateChange={(e: any) => setViewState(e.viewState as MapViewState)}
                     controller={{ type: MapController, touchRotate: true }}
                     layers={layers}
                     widgets={widgets}
@@ -292,7 +292,7 @@ export default function Map3D() {
                 >
                     <Map
                         mapboxAccessToken={MAPBOX_TOKEN}
-                        mapStyle="style.json"
+                        mapStyle={`${import.meta.env.BASE_URL}style.json`}
                         projection="mercator"
                         attributionControl={false}
                         interactive
