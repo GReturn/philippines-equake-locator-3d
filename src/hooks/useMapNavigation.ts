@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { FlyToInterpolator, type MapViewState } from 'deck.gl';
+import { FlyToInterpolator, type MapViewState } from '@deck.gl/core';
 import { INITIAL_VIEW_STATE } from '../constants/map';
 import { type ProcessedEarthquakeData } from '../types/processed-earthquake';
 
