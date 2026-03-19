@@ -3,8 +3,8 @@ export const panelStyle: React.CSSProperties = {
     top: 10,
     left: 10,
     minWidth: '20px',
-    maxWidth: '40vh', 
-    maxHeight: '100vh', 
+    maxWidth: '400px',
+    maxHeight: '100vh',
     padding: "1rem",
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     boxShadow: "-2px 0 8px rgba(0, 0, 0, 0.3)",
@@ -45,13 +45,13 @@ export const listItemStyle: React.CSSProperties = {
 };
 
 export const listItemLocationStyle: React.CSSProperties = {
-    display: 'block', 
-    fontSize: '12px', 
+    display: 'block',
+    fontSize: '12px',
     color: '#ccc'
 };
 
 export const listItemDateStyle: React.CSSProperties = {
-    display: 'block', 
-    fontSize: '12px', 
+    display: 'block',
+    fontSize: '12px',
     color: '#aaa'
 };

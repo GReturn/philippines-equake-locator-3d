@@ -10,7 +10,7 @@ export const loadingOverlayStyle: CSSProperties = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 9999, 
+    zIndex: 9999,
 };
 
 export const spinnerStyle: CSSProperties = {
@@ -21,10 +21,3 @@ export const spinnerStyle: CSSProperties = {
     height: '80px',
     animation: 'spin 1.5s linear infinite',
 };
-
-export const spinnerKeyframes = `
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-`;
