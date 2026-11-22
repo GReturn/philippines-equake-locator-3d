@@ -4,19 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Interactive 3D visualization of historical earthquake data in the Philippines, sourced from PHIVOLCS." />
-
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.16.0/mapbox-gl.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0e0e'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23d53e4f' stroke-width='2' opacity='.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23d53e4f'/%3E%3C/svg%3E">
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
     <link rel="manifest" href="./site.webmanifest">
-
     <title>PH Historical Earthquake Locator 3D</title>
+    <script>
+      (function(){
+        var bmCached = false;
+        try { bmCached = localStorage.getItem('bm4_cached') === '1'; } catch(e) {}
+        window.__PREFETCH__ = {
+          basemap: bmCached ? null : fetch('./data/basemap.bin').then(function(r){ return r.arrayBuffer(); }),
+          core: fetch('./data/quakes-core.eqb').then(function(r){ return r.arrayBuffer(); })
+        };
+      })();
+    </script>
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body style="margin:0;background:#2C353C">
+    <div id="root"><div class="loading-overlay" id="init-loader"><svg class="spinner" viewBox="0 0 80 80" aria-label="Loading"><circle cx="40" cy="40" r="34" fill="none" stroke="#f3f3f3" stroke-width="12"/><path d="M40 6a34 34 0 0 1 34 34" fill="none" stroke="#3498db" stroke-width="12"/></svg></div></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
