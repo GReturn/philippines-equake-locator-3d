@@ -1,0 +1,397 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0e0e0e;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+.map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.overlay-layer[hidden] {
+  display: none;
+}
+
+.overlay-line {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 1px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.95);
+  transform-origin: 0 1px;
+}
+
+.overlay-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+}
+
+.overlay-epi {
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid #000;
+}
+
+.ripple-anchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+.ripple-ring {
+  position: absolute;
+  left: -60px;
+  top: -60px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #fff;
+  transform: scale(0);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: ripple-pulse 2s linear infinite;
+}
+
+@keyframes ripple-pulse {
+  0% {
+    transform: scale(0);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Widget stacks matching exact Deck.gl widget aesthetic */
+.widget-stack {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.widget-stack-top {
+  top: 12px;
+}
+
+.widget-stack-bottom {
+  bottom: 12px;
+}
+
+.widget-group {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.widget-btn {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: none;
+  background: #fff;
+  color: #616166;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+  outline: none;
+}
+
+.widget-btn + .widget-btn {
+  border-top: 1px solid #e2e2e6;
+}
+
+.widget-btn:hover,
+.widget-btn:focus-visible {
+  background: #f0f0f4;
+  color: #18181a;
+}
+
+.widget-btn.active {
+  background: #e6f0ff;
+  color: #1971c2;
+}
+
+.compass-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  perspective: 120px;
+}
+
+.compass-svg {
+  will-change: transform;
+}
+
+/* Slide-in Earthquake Details panel (left) */
+.details-panel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  min-width: 260px;
+  max-width: 400px;
+  max-height: calc(100vh - 20px);
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.82);
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.35);
+  border-radius: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  z-index: 1000;
+  color: #fff;
+  overflow-y: auto;
+  transform: translateX(-450px);
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+  user-select: text;
+}
+
+.details-panel.open {
+  transform: translateX(0);
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.5rem;
+}
+
+.details-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.details-body {
+  margin-top: 1rem;
+}
+
+.details-body p {
+  margin: 0.65rem 0;
+  line-height: 1.35;
+}
+
+/* Floating Master Panel (top-right next to toolbar) */
+.master-panel {
+  position: absolute;
+  top: 10px;
+  right: 80px;
+  min-width: 250px;
+  max-width: 400px;
+  max-height: 60vh;
+  background: rgba(0, 0, 0, 0.82);
+  border-radius: 5px;
+  z-index: 1000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  user-select: text;
+}
+
+.master-panel[hidden] {
+  display: none;
+}
+
+.master-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+  padding: 0.75rem 1rem;
+  flex-shrink: 0;
+}
+
+.master-header h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.master-content {
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  color: #fff;
+  line-height: 1;
+}
+
+/* Filter sliders */
+.filter-group {
+  margin-bottom: 12px;
+}
+
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.filter-group input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+}
+
+.filter-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* Earthquake list */
+.quake-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.earthquake-list-item {
+  padding: 8px 4px;
+  border-bottom: 1px solid #444;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s;
+}
+
+.earthquake-list-item:hover,
+.earthquake-list-item:focus-visible {
+  background-color: #333;
+  outline: none;
+}
+
+.quake-item-loc {
+  display: block;
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 2px;
+}
+
+.quake-item-date {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+/* Hover Tooltip */
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 900;
+  background: rgba(18, 20, 24, 0.92);
+  color: #f4f4f6;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-line;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: none;
+  will-change: transform;
+}
+
+/* Loading & Error overlay */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-overlay[hidden] {
+  display: none;
+}
+
+.spinner {
+  width: 80px;
+  height: 80px;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-box {
+  color: #ff6b6b;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.attribution {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.attribution a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+}

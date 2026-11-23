@@ -10,9 +10,9 @@ An interactive 3D web application for visualizing historical earthquake data wit
 
 ## Details
 
-Made with TS, React, Vite. Map is provided by Mapbox GL. High-perf rendering is done by `deck.gl`. Inspired from [japan-eq-locator](https://github.com/nagix/japan-eq-locator)
+Built with TypeScript, Vite, and a custom WebGL2 3D WebMercator engine with precompiled multi-LOD vector basemap geometry (`BM4`) and two-tier columnar binary earthquake bundles (`EQC2`/`EQM1`/`EQL2`). Inspired by [japan-eq-locator](https://github.com/nagix/japan-eq-locator).
 
-The historical earthquake data used in this project is sourced from the official public records of the **[Philippine Institute of Volcanology and Seismology (PHIVOLCS)](https://www.phivolcs.dost.gov.ph/)**
+The historical earthquake data used in this project is sourced from the official public records of the **[Philippine Institute of Volcanology and Seismology (PHIVOLCS)](https://www.phivolcs.dost.gov.ph/)** via `phivolcs-earthquake-data-scraper` and automatically checks for daily updates at runtime (plus a daily GitHub Actions rebuild at 10:15 AM PHT).
 
 **Disclaimer:** This tool is intended for educational and informational purposes only. It is **not** to be used for real-time monitoring or disaster response. Please always refer to official government agencies for alerts.
 
@@ -20,7 +20,7 @@ The historical earthquake data used in this project is sourced from the official
 
 ## 🚀 Getting Started (For Developers)
 
-If you wish to run this project locally:
+No API keys or Mapbox tokens are required.
 
 1.  **Clone the repository:**
     ```bash
@@ -37,24 +37,23 @@ If you wish to run this project locally:
     npm install
     ```
 
-4.  **Set up environment variables:**
-    ```bash
-    cp .env.example .env
-    ```
-    Then fill in your [Mapbox access token](https://account.mapbox.com/access-tokens/) in the `.env` file.
-
-5.  **Start:**
+4.  **Start the dev server:**
     ```bash
     npm run dev
     ```
 
-6.  Open [http://localhost:5173](http://localhost:5173) in your browser.
+5.  Open [http://localhost:5173/philippines-equake-locator-3d/](http://localhost:5173/philippines-equake-locator-3d/) in your browser.
+
+### Optional Data Scripts
+
+- `npm run build:data` — Fetches the latest PHIVOLCS archive and recompiles the binary bundles in `public/data/`.
+- `npm run build:basemap` — Rebuilds the multi-LOD vector basemap (`public/data/basemap.bin`).
 
 ---
 
-## 🧪 Testing
+## 🧪 Verification
 
-This project currently has no automated test suite. Verification is done manually by running the dev server and checking that the map loads, earthquake data renders, and all UI panels (filter, history, major quakes, details) function correctly.
+Run `npm run build` and `npm run lint` to type-check, bundle, and lint the application.
 
 ---
 

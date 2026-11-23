@@ -3,15 +3,17 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # Change to "master" if your repository's default branch is master
+      - main
+  schedule:
+    # Daily sync at 10:15 AM PHT (02:15 UTC), 15 min after PHIVOLCS scraper runs
+    - cron: '15 2 * * *'
+  workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -35,10 +37,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Compile fresh earthquake binary bundles
+        run: npm run build:data
+
       - name: Build
         run: npm run build
-        env:
-          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
